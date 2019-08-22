@@ -11,6 +11,7 @@ from networks import GMM, UnetGenerator, VGGLoss, load_checkpoint, save_checkpoi
 
 from tensorboardX import SummaryWriter
 from visualization import board_add_image, board_add_images
+from p2p_discriminator import define_D
 
 
 def get_opt():
@@ -151,6 +152,103 @@ def train_tom(opt, train_loader, model, board):
             save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'step_%06d.pth' % (step+1)))
 
 
+############### need to modify the cp_dataset.py before using
+def train_wuton(opt, train_loader, model_gmm, model_tom, board):
+    model_gmm.cuda()
+    model_gmm.train()
+
+    model_tom.cuda()
+    model_tom.train()
+
+    BCE_stable = torch.nn.BCEWithLogitsLoss()
+    # criterion
+    criterionL1 = nn.L1Loss()
+    criterionVGG = VGGLoss()
+
+    netD = networks.define_D(opt.input_nc + opt.output_nc, opt.ndf, opt.netD,
+                                          opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids)
+
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=opt.lr, betas=(0.5, 0.999))
+    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda = lambda step: 1.0 -
+            max(0, step - opt.keep_step) / float(opt.decay_step + 1))
+
+    for step in range(opt.keep_step + opt.decay_step):
+        iter_start_time = time.time()
+        inputs = train_loader.next_batch()
+            
+        im = inputs['image'].cuda()
+        # im_pose = inputs['pose_image']
+        # im_h = inputs['head']
+        # shape = inputs['shape']
+
+        agnostic = inputs['agnostic'].cuda()
+        c = inputs['cloth_paired'].cuda()
+        c_unpaired = inputs['cloth_unpaired'].cuda()
+        # cm = inputs['cloth_mask'].cuda()
+        im_c =  inputs['parse_cloth'].cuda()
+
+        
+        grid, theta = model_gmm(torch.cat([agnostic, c],1))
+        warped_cloth = F.grid_sample(c, grid, padding_mode='border')
+        outputs = model_tom(torch.cat([agnostic, c],1), theta)
+        
+
+        grid_unpaired, theta_unpaired = model_gmm(torch.cat([agnostic, c_unpaired],1))
+        outputs_unpaired = model_tom(torch.cat([agnostic, c_unpaired],1), theta)
+
+
+
+
+        # p_rendered, m_composite = torch.split(outputs, 3,3)
+        # p_rendered = F.tanh(p_rendered)
+        # m_composite = F.sigmoid(m_composite)
+        # p_tryon = c * m_composite+ p_rendered * (1 - m_composite)
+
+        # visuals = [ [im_h, shape, im_pose], 
+        #            [c, cm*2-1, m_composite*2-1], 
+        #            [p_rendered, p_tryon, im]]
+
+        loss_warp_l1 = criterionL1(warped_cloth, im_c)    
+        loss_l1 = criterionL1(outputs, im)
+        loss_vgg = criterionVGG(outputs, im)
+
+        ######### loss_adv
+        y_pred = netD(im)
+
+        y_pred_fake_G = D(outputs_unpaired.detach()) # generator
+        y_pred_fake_D = D(outputs_unpaired) # discriminator
+        y = torch.ones_like(current_batch_size) ########all 1
+
+        # Discriminator loss
+        loss_d = BCE_stable(y_pred - y_pred_fake_D, y)
+
+        # Generator loss (You may want to resample again from real and fake data)
+        loss_g = BCE_stable(y_pred_fake_G - y_pred, y)
+
+        loss_adv = loss_d + loss_g
+
+
+
+
+        loss = loss_warp_l1 + loss_l1 + loss_vgg + loss_adv
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+            
+        # if (step+1) % opt.display_count == 0:
+        #     board_add_images(board, 'combine', visuals, step+1)
+        #     board.add_scalar('metric', loss.item(), step+1)
+        #     board.add_scalar('L1', loss_l1.item(), step+1)
+        #     board.add_scalar('VGG', loss_vgg.item(), step+1)
+        #     board.add_scalar('MaskL1', loss_mask.item(), step+1)
+        #     t = time.time() - iter_start_time
+        #     print('step: %8d, time: %.3f, loss: %.4f, l1: %.4f, vgg: %.4f, mask: %.4f' 
+        #             % (step+1, t, loss.item(), loss_l1.item(), 
+        #             loss_vgg.item(), loss_mask.item()), flush=True)
+
+        # if (step+1) % opt.save_count == 0:
+        #     save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'step_%06d.pth' % (step+1)))
 
 def main():
     opt = get_opt()
@@ -182,7 +280,12 @@ def main():
         train_tom(opt, train_loader, model, board)
         save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'tom_final.pth'))
     else:
-        raise NotImplementedError('Model [%s] is not implemented' % opt.stage)
+        model_gmm = GMM(opt)
+        model_tom = UnetGenerator(3, 6, 5, ngf=16, norm_layer=nn.InstanceNorm2d)
+        train_wuton(opt, train_loader, model_gmm, model_tom, board)
+        save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'wuton_final.pth'))
+
+        # raise NotImplementedError('Model [%s] is not implemented' % opt.stage)
         
   
     print('Finished training %s, nameed: %s!' % (opt.stage, opt.name))
