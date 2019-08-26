@@ -192,40 +192,33 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
     criterionL1 = nn.L1Loss()
     criterionVGG = VGGLoss()
 
-    netD = networks.define_D(3, opt.ndf, opt.netD,
-                             opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids)
+    netD = networks.define_D(3, ndf, 'n_layers', 5, norm='batch', init_type='normal', [0,1,2,3])
 
 
     optimizer_G = torch.optim.Adam(wuton.parameters(), lr=opt.lr, betas=(0.5, 0.999))
-    optimizer_D = torch.optim.Adam(netD.parameters(), lr=opt.lr, betas=(0.5, 0.999))
+    optimizer_D = torch.optim.Adam(netD.parameters(), lr=opt.lr, betas=(0.5, 0.999), )
 
-    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda = lambda step: 1.0 -
-            max(0, step - opt.keep_step) / float(opt.decay_step + 1))
 
     for step in range(opt.keep_step + opt.decay_step):
         iter_start_time = time.time()
         inputs = train_loader.next_batch()
             
         im = inputs['image'].cuda()
-        # im_pose = inputs['pose_image']
-        # im_h = inputs['head']
-        # shape = inputs['shape']
-
-        # agnostic = inputs['agnostic'].cuda()
         c = inputs['cloth'].cuda()
-        cloth_unpaired = inputs['cloth_unpaired'].cuda()
+        c_unpaired = inputs['c_unpaired'].cuda()
         dilated_upper_wuton = inputs['dilated_upper_wuton'].cuda()
-        # cm = inputs['cloth_mask'].cuda()
         im_c =  inputs['parse_cloth'].cuda()
 
         #########paired
         grid, theta = model_gmm(torch.cat([dilated_upper_wuton, c],1))
         warped_cloth = F.grid_sample(c, grid, padding_mode='border')
         outputs = model_tom(torch.cat([dilated_upper_wuton, c],1), theta)
+        outputs = F.tanh(outputs)
         
         ########unpaired
-        grid_unpaired, theta_unpaired = model_gmm(torch.cat([dilated_upper_wuton, cloth_unpaired],1))
-        outputs_unpaired = model_tom(torch.cat([dilated_upper_wuton, cloth_unpaired],1), theta_unpaired)
+        grid_unpaired, theta_unpaired = model_gmm(torch.cat([dilated_upper_wuton, c_unpaired],1))
+        outputs_unpaired = model_tom(torch.cat([dilated_upper_wuton, c_unpaired],1), theta_unpaired)
+        outputs_unpaired = F.tanh(outputs_unpaired)
 
         y = torch.ones_like(outputs_unpaired.size()[0]) ########all 1
 
@@ -235,14 +228,10 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
         for p in wuton.parameters():
             p.requires_grad_(False)  # freeze G
 
-        # p_rendered, m_composite = torch.split(outputs, 3,3)
-        # p_rendered = F.tanh(p_rendered)
-        # m_composite = F.sigmoid(m_composite)
-        # p_tryon = c * m_composite+ p_rendered * (1 - m_composite)
+        visuals = [[c, warped_cloth, im_c], 
+                   [outputs, (warped_cloth+im)*0.5, im]]
 
-        # visuals = [ [im_h, shape, im_pose], 
-        #            [c, cm*2-1, m_composite*2-1], 
-        #            [p_rendered, p_tryon, im]]
+
 
         # Discriminator loss
         optimizer_D.zero_grad()
@@ -276,19 +265,20 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
             loss_g.backward()
             optimizer_G.step()
                 
-            # if (step+1) % opt.display_count == 0:
-            #     board_add_images(board, 'combine', visuals, step+1)
-            #     board.add_scalar('metric', loss.item(), step+1)
-            #     board.add_scalar('L1', loss_l1.item(), step+1)
-            #     board.add_scalar('VGG', loss_vgg.item(), step+1)
-            #     board.add_scalar('MaskL1', loss_mask.item(), step+1)
-            #     t = time.time() - iter_start_time
-            #     print('step: %8d, time: %.3f, loss: %.4f, l1: %.4f, vgg: %.4f, mask: %.4f' 
-            #             % (step+1, t, loss.item(), loss_l1.item(), 
-            #             loss_vgg.item(), loss_mask.item()), flush=True)
+            if (step+1) % opt.display_count == 0:
+                board_add_images(board, 'combine', visuals, step+1)
+                board.add_scalar('metric_d', loss_d.item(), step+1)
+                board.add_scalar('metric_g', loss_g.item(), step+1)
+                board.add_scalar('warp_L1', loss_warp_l1.item(), step+1)
+                board.add_scalar('final_L1', loss_l1.item(), step+1)
+                board.add_scalar('VGG', loss_vgg.item(), step+1)
+                t = time.time() - iter_start_time
+                print('step: %8d, time: %.3f, loss_d: %.4f, loss_g: %.4f, warp_l1: %.4f, final_l1: %.4f, vgg: %.4f' 
+                        % (step+1, t, loss_d.item(), loss_g.item(), 
+                        warp_l1.item(), final_l1.item(), vgg.item()), flush=True)
 
-            # if (step+1) % opt.save_count == 0:
-            #     save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'step_%06d.pth' % (step+1)))
+            if (step+1) % opt.save_count == 0:
+                save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'step_%06d.pth' % (step+1)))
 
 def main():
     opt = get_opt()
@@ -321,9 +311,10 @@ def main():
         save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'tom_final.pth'))
     else:
         model_gmm = GMM(opt)
-        model_tom = UnetGenerator(3, 6, 5, ngf=16, norm_layer=nn.InstanceNorm2d)
+        model_tom = UnetGenerator(3, 3, 5, ngf=16, norm_layer=nn.InstanceNorm2d)
         train_wuton(opt, train_loader, model_gmm, model_tom, board)
-        save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'wuton_final.pth'))
+        save_checkpoint(model_gmm, os.path.join(opt.checkpoint_dir, opt.name, 'wuton_gmm_final.pth'))
+        save_checkpoint(model_tom, os.path.join(opt.checkpoint_dir, opt.name, 'wuton_tom_final.pth'))
 
         # raise NotImplementedError('Model [%s] is not implemented' % opt.stage)
         

@@ -303,7 +303,7 @@ class TpsGridGen(nn.Module):
 # # if |num_downs| == 7, image of size 128x128 will become of size 1x1
 # # at the bottleneck
 class UnetGenerator(nn.Module, theta):
-    def __init__(self, input_nc=3, output_nc=3, ngf=16,
+    def __init__(self, input_nc=3, output_nc=3, num_downs=5, ngf=16,
                  norm_layer=nn.BatchNorm2d, use_dropout=False):
         super(UnetGenerator, self).__init__()
 

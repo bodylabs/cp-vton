@@ -12,6 +12,12 @@ import json
 import os
 import cv2
 from scipy import ndimage
+import random 
+
+
+train_cloth_ids = np.load('train_cloth_ids.npy').tolist()
+test_cloth_ids = np.load('test_cloth_ids.npy').tolist()
+
 
 def cloth_region_position(new_image):
     if len(new_image.shape) == 3:
@@ -90,6 +96,13 @@ class CPDataset(data.Dataset):
         c_name = self.c_names[index]
         im_name = self.im_names[index]
 
+        if self.datamode == 'test':
+            others = test_cloth_ids.remove(c_name)
+            unpair_c_name = random.sample(others,1)
+        else:
+            others = train_cloth_ids.remove(c_name)
+            unpair_c_name = random.sample(others,1)
+
         # cloth image & cloth mask
         # if self.stage == 'GMM':
         #     c = Image.open(osp.join(self.data_path, 'cloth', c_name))
@@ -98,8 +111,11 @@ class CPDataset(data.Dataset):
         #     c = Image.open(osp.join(self.data_path, 'warp-cloth', c_name))
         #     # cm = Image.open(osp.join(self.data_path, 'warp-mask', c_name))
         c = Image.open(osp.join(self.data_path, 'cloth', c_name))
-     
         c = self.transform(c)  # [-1,1]
+
+        c_unpair = Image.open(osp.join(self.data_path, 'cloth', unpair_c_name))
+        c_unpair = self.transform(c_unpair)  # [-1,1]
+
         # cm_array = np.array(cm)
         # cm_array = (cm_array >= 128).astype(np.float32)
         # cm = torch.from_numpy(cm_array) # [0,1]
@@ -134,7 +150,7 @@ class CPDataset(data.Dataset):
 
         ##### prepare the dilated image
         im_array = np.array(im)
-        dilated_upper_wuton = shrink(im_array, parse_upper, pixel=5)
+        dilated_upper_wuton = shrink(im_array, parse_upper, pixel=9)
         dilated_upper_wuton = Image.fromarray(dilated_upper_wuton)
         dilated_upper_wuton = self.transform(dilated_upper_wuton) # [-1,1]
 
@@ -204,7 +220,7 @@ class CPDataset(data.Dataset):
             # 'top_cloth_parse': pcm_top,
             # 'agnostic_cloth': agnostic_cloth,
             'dilated_upper_wuton': dilated_upper_wuton,
-            'cloth_unpaired': cloth_unpaired
+            'c_unpaired': c_unpair,
             }
 
         return result

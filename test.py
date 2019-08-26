@@ -30,7 +30,8 @@ def get_opt():
     parser.add_argument("--grid_size", type=int, default = 5)
     parser.add_argument('--tensorboard_dir', type=str, default='tensorboard', help='save tensorboard infos')
     parser.add_argument('--result_dir', type=str, default='result', help='save result infos')
-    parser.add_argument('--checkpoint', type=str, default='', help='model checkpoint for test')
+    parser.add_argument('--checkpoint_gmm', type=str, default='', help='model gmm checkpoint for test')
+    parser.add_argument('--checkpoint_tom', type=str, default='', help='model tom checkpoint for test')
     parser.add_argument("--display_count", type=int, default = 1)
     parser.add_argument("--shuffle", action='store_true', help='shuffle input data')
 
@@ -126,6 +127,50 @@ def test_tom(opt, test_loader, model, board):
             t = time.time() - iter_start_time
             print('step: %8d, time: %.3f' % (step+1, t), flush=True)
 
+def test_wuton(opt, test_loader, model_gmm, model_tom, board):
+    model_gmm.cuda()
+    model_gmm.train()
+
+    model_tom.cuda()
+    model_tom.train()
+    
+    base_name = os.path.basename(opt.checkpoint)
+    save_dir = os.path.join(opt.result_dir, base_name, opt.datamode)
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    try_on_dir = os.path.join(save_dir, 'try-on')
+    if not os.path.exists(try_on_dir):
+        os.makedirs(try_on_dir)
+    print('Dataset size: %05d!' % (len(test_loader.dataset)), flush=True)
+    for step, inputs in enumerate(test_loader.data_loader):
+        iter_start_time = time.time()
+        
+        im_names = inputs['im_name']
+
+        im = inputs['image'].cuda()
+        c = inputs['cloth'].cuda()
+        # c_unpaired = inputs['c_unpaired'].cuda()
+        dilated_upper_wuton = inputs['dilated_upper_wuton'].cuda()
+        im_c =  inputs['parse_cloth'].cuda()
+
+
+        grid, theta = model_gmm(torch.cat([dilated_upper_wuton, c],1))
+        outputs = model_tom(torch.cat([dilated_upper_wuton, c],1), theta)
+        outputs = F.tanh(outputs)
+
+        warped_cloth = F.grid_sample(c, grid, padding_mode='border')
+        warped_grid = F.grid_sample(im_g, grid, padding_mode='zeros')
+
+        visuals = [[c, warped_cloth, im_c], 
+                   [outputs, (warped_cloth+im)*0.5, im]]
+            
+        save_images(outputs, im_names, try_on_dir) 
+        if (step+1) % opt.display_count == 0:
+            board_add_images(board, 'combine', visuals, step+1)
+            t = time.time() - iter_start_time
+            print('step: %8d, time: %.3f' % (step+1, t), flush=True)
+
+
 
 def main():
     opt = get_opt()
@@ -155,7 +200,13 @@ def main():
         with torch.no_grad():
             test_tom(opt, train_loader, model, board)
     else:
-        raise NotImplementedError('Model [%s] is not implemented' % opt.stage)
+        # raise NotImplementedError('Model [%s] is not implemented' % opt.stage)
+        model_gmm = GMM(opt)
+        model_tom = UnetGenerator(3, 3, 5, ngf=16, norm_layer=nn.InstanceNorm2d)
+        load_checkpoint(model_gmm, opt.checkpoint_gmm)
+        load_checkpoint(model_tom, opt.checkpoint_tom)
+        with torch.no_grad():
+            test_wuton(opt, train_loader, model_gmm, model_tom, board)
   
     print('Finished test %s, named: %s!' % (opt.stage, opt.name))
 
