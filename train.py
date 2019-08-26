@@ -211,20 +211,21 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
         # im_h = inputs['head']
         # shape = inputs['shape']
 
-        agnostic = inputs['agnostic'].cuda()
-        c = inputs['cloth_paired'].cuda()
-        c_unpaired = inputs['cloth_unpaired'].cuda()
+        # agnostic = inputs['agnostic'].cuda()
+        c = inputs['cloth'].cuda()
+        cloth_unpaired = inputs['cloth_unpaired'].cuda()
+        dilated_upper_wuton = inputs['dilated_upper_wuton'].cuda()
         # cm = inputs['cloth_mask'].cuda()
         im_c =  inputs['parse_cloth'].cuda()
 
-        
-        grid, theta = model_gmm(torch.cat([agnostic, c],1))
+        #########paired
+        grid, theta = model_gmm(torch.cat([dilated_upper_wuton, c],1))
         warped_cloth = F.grid_sample(c, grid, padding_mode='border')
-        outputs = model_tom(torch.cat([agnostic, c],1), theta)
+        outputs = model_tom(torch.cat([dilated_upper_wuton, c],1), theta)
         
-
-        grid_unpaired, theta_unpaired = model_gmm(torch.cat([agnostic, c_unpaired],1))
-        outputs_unpaired = model_tom(torch.cat([agnostic, c_unpaired],1), theta)
+        ########unpaired
+        grid_unpaired, theta_unpaired = model_gmm(torch.cat([dilated_upper_wuton, cloth_unpaired],1))
+        outputs_unpaired = model_tom(torch.cat([dilated_upper_wuton, cloth_unpaired],1), theta_unpaired)
 
         y = torch.ones_like(outputs_unpaired.size()[0]) ########all 1
 

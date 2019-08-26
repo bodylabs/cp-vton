@@ -9,6 +9,48 @@ from PIL import ImageDraw
 import os.path as osp
 import numpy as np
 import json
+import os
+import cv2
+from scipy import ndimage
+
+def cloth_region_position(new_image):
+    if len(new_image.shape) == 3:
+        fill_pix_bool = np.all(new_image == (1,1,1), axis=-1)
+    else:
+        fill_pix_bool = new_image == 1
+
+    fill_pix_indices = np.where(fill_pix_bool)
+    fill_pix_indices = np.squeeze(np.array([fill_pix_indices])).T
+    return fill_pix_indices
+
+
+def inner_distance(segmentation_one_channel):
+    inner_dis = ndimage.distance_transform_edt(segmentation_one_channel)
+    return inner_dis
+
+
+def outer_distance(segmentation_one_channel):
+    outer_dis = ndimage.distance_transform_edt(np.logical_not(segmentation_one_channel))
+    return outer_dis
+
+def shrink(image, cloth_mask, pixel=-2):
+    new_image = image.copy()
+    fill_pix_indices = cloth_region_position(new_image)
+    # new_image[fill_pix_indices[:,0],fill_pix_indices[:,1]] = np.array([0.,0.,0.])
+    
+    # segmentation = np.zeros_like(new_image)[:,:,0]
+    # segmentation[fill_pix_indices[:,0], fill_pix_indices[:,1]] = 1
+    inner_dis = inner_distance(cloth_mask)
+    outer_dis = outer_distance(cloth_mask)
+    combine_dis = inner_dis*(-1)+outer_dis
+    
+    shrink_idx = combine_dis<=pixel
+    shrink_idx = np.where(shrink_idx)
+    shrink_idx = np.squeeze(np.array([shrink_idx])).T
+    
+    new_image[shrink_idx[:,0],shrink_idx[:,1]] = np.array([128,128,128])
+    
+    return new_image
 
 class CPDataset(data.Dataset):
     """Dataset for CP-VTON.
@@ -49,18 +91,19 @@ class CPDataset(data.Dataset):
         im_name = self.im_names[index]
 
         # cloth image & cloth mask
-        if self.stage == 'GMM':
-            c = Image.open(osp.join(self.data_path, 'cloth', c_name))
-            cm = Image.open(osp.join(self.data_path, 'cloth-mask', c_name))
-        else:
-            c = Image.open(osp.join(self.data_path, 'warp-cloth', c_name))
-            cm = Image.open(osp.join(self.data_path, 'warp-mask', c_name))
+        # if self.stage == 'GMM':
+        #     c = Image.open(osp.join(self.data_path, 'cloth', c_name))
+        #     # cm = Image.open(osp.join(self.data_path, 'cloth-mask', c_name))
+        # else:
+        #     c = Image.open(osp.join(self.data_path, 'warp-cloth', c_name))
+        #     # cm = Image.open(osp.join(self.data_path, 'warp-mask', c_name))
+        c = Image.open(osp.join(self.data_path, 'cloth', c_name))
      
         c = self.transform(c)  # [-1,1]
-        cm_array = np.array(cm)
-        cm_array = (cm_array >= 128).astype(np.float32)
-        cm = torch.from_numpy(cm_array) # [0,1]
-        cm.unsqueeze_(0)
+        # cm_array = np.array(cm)
+        # cm_array = (cm_array >= 128).astype(np.float32)
+        # cm = torch.from_numpy(cm_array) # [0,1]
+        # cm.unsqueeze_(0)
 
         # person image 
         im = Image.open(osp.join(self.data_path, 'image', im_name))
@@ -80,7 +123,21 @@ class CPDataset(data.Dataset):
         parse_cloth = (parse_array == 5).astype(np.float32) + \
                 (parse_array == 6).astype(np.float32) + \
                 (parse_array == 7).astype(np.float32)
-        parse_cloth_top = (parse_array == 5).astype(np.float32)       
+        parse_cloth_top = (parse_array == 5).astype(np.float32)
+
+
+        parse_upper = (parse_array == 5).astype(np.float32) + \
+                (parse_array == 6).astype(np.float32) + \
+                (parse_array == 7).astype(np.float32) + \
+                (parse_array == 14).astype(np.float32) + \
+                (parse_array == 15).astype(np.float32)
+
+        ##### prepare the dilated image
+        im_array = np.array(im)
+        dilated_upper_wuton = shrink(im_array, parse_upper, pixel=5)
+        dilated_upper_wuton = Image.fromarray(dilated_upper_wuton)
+        dilated_upper_wuton = self.transform(dilated_upper_wuton) # [-1,1]
+
         # shape downsample
         parse_shape = Image.fromarray((parse_shape*255).astype(np.uint8))
         parse_shape = parse_shape.resize((self.fine_width//16, self.fine_height//16), Image.BILINEAR)
@@ -136,16 +193,18 @@ class CPDataset(data.Dataset):
             'c_name':   c_name,     # for visualization
             'im_name':  im_name,    # for visualization or ground truth
             'cloth':    c,          # for input
-            'cloth_mask':     cm,   # for input
+            # 'cloth_mask':     cm,   # for input
             'image':    im,         # for visualization
-            'agnostic': agnostic,   # for input
+            # 'agnostic': agnostic,   # for input
             'parse_cloth': im_c,    # for ground truth
-            'shape': shape,         # for visualization
-            'head': im_h,           # for visualization
-            'pose_image': im_pose,  # for visualization
+            # 'shape': shape,         # for visualization
+            # 'head': im_h,           # for visualization
+            # 'pose_image': im_pose,  # for visualization
             'grid_image': im_g,     # for visualization
-            'top_cloth_parse': pcm_top,
-            'agnostic_cloth': agnostic_cloth,
+            # 'top_cloth_parse': pcm_top,
+            # 'agnostic_cloth': agnostic_cloth,
+            'dilated_upper_wuton': dilated_upper_wuton,
+            'cloth_unpaired': cloth_unpaired
             }
 
         return result
