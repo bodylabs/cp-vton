@@ -40,6 +40,9 @@ def outer_distance(segmentation_one_channel):
 
 def shrink(image, cloth_mask, pixel=-2):
     new_image = image.copy()
+    new_image = np.swapaxes(new_image, 0, 1)
+    new_image = np.swapaxes(new_image, 1, 2)
+
     fill_pix_indices = cloth_region_position(new_image)
     print (image.shape, cloth_mask.shape)
     # new_image[fill_pix_indices[:,0],fill_pix_indices[:,1]] = np.array([0.,0.,0.])
