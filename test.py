@@ -154,8 +154,8 @@ def test_wuton(opt, test_loader, model_gmm, model_tom, board):
         im_c =  inputs['parse_cloth'].cuda()
 
 
-        grid, theta = model_gmm(torch.cat([dilated_upper_wuton, c],1))
-        outputs = model_tom(torch.cat([dilated_upper_wuton, c],1), theta)
+        grid, theta = model_gmm(c, dilated_upper_wuton)
+        outputs = model_tom(c, dilated_upper_wuton, theta)
         outputs = F.tanh(outputs)
 
         warped_cloth = F.grid_sample(c, grid, padding_mode='border')

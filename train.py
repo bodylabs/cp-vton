@@ -211,14 +211,14 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
         im_c =  inputs['parse_cloth'].cuda()
 
         #########paired
-        grid, theta = model_gmm(torch.cat([dilated_upper_wuton, c],1))
+        grid, theta = model_gmm(c, dilated_upper_wuton)
         warped_cloth = F.grid_sample(c, grid, padding_mode='border')
-        outputs = model_tom(torch.cat([dilated_upper_wuton, c],1), theta)
+        outputs = model_tom(c, dilated_upper_wuton, theta)
         outputs = F.tanh(outputs)
         
         ########unpaired
-        grid_unpaired, theta_unpaired = model_gmm(torch.cat([dilated_upper_wuton, c_unpaired],1))
-        outputs_unpaired = model_tom(torch.cat([dilated_upper_wuton, c_unpaired],1), theta_unpaired)
+        grid_unpaired, theta_unpaired = model_gmm(c_unpaired, dilated_upper_wuton)
+        outputs_unpaired = model_tom(c_unpaired, dilated_upper_wuton, theta_unpaired)
         outputs_unpaired = F.tanh(outputs_unpaired)
 
         y = torch.ones_like(outputs_unpaired.size()[0]) ########all 1
