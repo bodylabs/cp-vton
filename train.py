@@ -15,6 +15,7 @@ from p2p_discriminator import define_D
 
 lambda_gp = 10
 
+Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
 
 def get_opt():
     parser = argparse.ArgumentParser()
