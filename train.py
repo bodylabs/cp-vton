@@ -280,36 +280,36 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
         # for p in netD.parameters():
         #     p.requires_grad_(False)  # freeze D
 
-        if step % 5 == 0:
+        # if step % 5 == 0:
 
-            # Generator loss (You may want to resample again from real and fake data)
-            optimizer_G.zero_grad()
-            loss_warp_l1 = criterionL1(warped_cloth, im_c)    
-            loss_l1 = criterionL1(outputs, im)
-            loss_vgg = criterionVGG(outputs, im)
+        #     # Generator loss (You may want to resample again from real and fake data)
+        #     optimizer_G.zero_grad()
+        #     loss_warp_l1 = criterionL1(warped_cloth, im_c)    
+        #     loss_l1 = criterionL1(outputs, im)
+        #     loss_vgg = criterionVGG(outputs, im)
 
-            y_pred_fake_G = netD(outputs_unpaired.detach()) # generator
-            loss_g = BCE_stable(y_pred_fake_G - y_pred, y) + loss_warp_l1 + loss_l1 + loss_vgg
-            if step==1:
-                loss_g.backward(retain_graph=True)
-            else:
-                loss_g.backward(retain_graph=True)
-            optimizer_G.step()
+        #     y_pred_fake_G = netD(outputs_unpaired.detach()) # generator
+        #     loss_g = BCE_stable(y_pred_fake_G - y_pred, y) + loss_warp_l1 + loss_l1 + loss_vgg
+        #     if step==1:
+        #         loss_g.backward(retain_graph=True)
+        #     else:
+        #         loss_g.backward(retain_graph=True)
+        #     optimizer_G.step()
                 
-            if (step+1) % opt.display_count == 0:
-                board_add_images(board, 'combine', visuals, step+1)
-                board.add_scalar('metric_d', loss_d.item(), step+1)
-                board.add_scalar('metric_g', loss_g.item(), step+1)
-                board.add_scalar('warp_L1', loss_warp_l1.item(), step+1)
-                board.add_scalar('final_L1', loss_l1.item(), step+1)
-                board.add_scalar('VGG', loss_vgg.item(), step+1)
-                t = time.time() - iter_start_time
-                print('step: %8d, time: %.3f, loss_d: %.4f, loss_g: %.4f, warp_l1: %.4f, final_l1: %.4f, vgg: %.4f' 
-                        % (step+1, t, loss_d.item(), loss_g.item(), 
-                        warp_l1.item(), final_l1.item(), loss_vgg.item()), flush=True)
+        #     if (step+1) % opt.display_count == 0:
+        #         board_add_images(board, 'combine', visuals, step+1)
+        #         board.add_scalar('metric_d', loss_d.item(), step+1)
+        #         board.add_scalar('metric_g', loss_g.item(), step+1)
+        #         board.add_scalar('warp_L1', loss_warp_l1.item(), step+1)
+        #         board.add_scalar('final_L1', loss_l1.item(), step+1)
+        #         board.add_scalar('VGG', loss_vgg.item(), step+1)
+        #         t = time.time() - iter_start_time
+        #         print('step: %8d, time: %.3f, loss_d: %.4f, loss_g: %.4f, warp_l1: %.4f, final_l1: %.4f, vgg: %.4f' 
+        #                 % (step+1, t, loss_d.item(), loss_g.item(), 
+        #                 warp_l1.item(), final_l1.item(), loss_vgg.item()), flush=True)
 
-            if (step+1) % opt.save_count == 0:
-                save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'step_%06d.pth' % (step+1)))
+        #     if (step+1) % opt.save_count == 0:
+        #         save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'step_%06d.pth' % (step+1)))
 
 def main():
     opt = get_opt()
