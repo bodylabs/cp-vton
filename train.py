@@ -196,7 +196,7 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
     netD = define_D(3, 64, 'n_layers', 5, norm='batch', init_type='normal', gpu_ids=[0])
 
 
-    optimizer_G = torch.optim.Adam(list(model_gmm.parameters()+model_tom.parameters()), lr=opt.lr, betas=(0.5, 0.999))
+    optimizer_G = torch.optim.Adam(list(model_gmm.parameters())+list(model_tom.parameters()), lr=opt.lr, betas=(0.5, 0.999))
     optimizer_D = torch.optim.Adam(netD.parameters(), lr=opt.lr, betas=(0.5, 0.999), )
 
 
