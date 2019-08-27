@@ -276,7 +276,7 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
                 t = time.time() - iter_start_time
                 print('step: %8d, time: %.3f, loss_d: %.4f, loss_g: %.4f, warp_l1: %.4f, final_l1: %.4f, vgg: %.4f' 
                         % (step+1, t, loss_d.item(), loss_g.item(), 
-                        warp_l1.item(), final_l1.item(), vgg.item()), flush=True)
+                        warp_l1.item(), final_l1.item(), loss_vgg.item()), flush=True)
 
             if (step+1) % opt.save_count == 0:
                 save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'step_%06d.pth' % (step+1)))
