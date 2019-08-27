@@ -290,7 +290,10 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
 
             y_pred_fake_G = netD(outputs_unpaired.detach()) # generator
             loss_g = BCE_stable(y_pred_fake_G - y_pred, y) + loss_warp_l1 + loss_l1 + loss_vgg
-            loss_g.backward()
+            if step != 200000:
+                loss_g.backward(retain_graph=True)
+            else:
+                loss_g.backward()
             optimizer_G.step()
                 
             if (step+1) % opt.display_count == 0:
