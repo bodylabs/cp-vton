@@ -252,11 +252,11 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
         # ---------------------
         #  Train Discriminator
         # ---------------------
-        # for p in model_gmm.parameters():
-        #     p.requires_grad_(False)  # freeze G
+        for p in model_gmm.parameters():
+            p.requires_grad_(False)  # freeze G
 
-        # for p in model_tom.parameters():
-        #     p.requires_grad_(False)  # freeze G
+        for p in model_tom.parameters():
+            p.requires_grad_(False)  # freeze G
 
         visuals = [[c, warped_cloth, im_c], 
                    [outputs, (warped_cloth+im)*0.5, im]]
@@ -267,6 +267,8 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
         optimizer_D.zero_grad()
         y_pred = netD(im)
         y_pred_fake_D = netD(outputs_unpaired) # discriminator
+
+        print (y_pred.size(), y_pred_fake_D.size())
         
 
         gradient_penalty = compute_gradient_penalty(netD, im.data.to(device), outputs_unpaired.data.to(device))
@@ -291,6 +293,13 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
         # # ---------------------
         # for p in netD.parameters():
         #     p.requires_grad_(False)  # freeze D
+
+        for p in model_gmm.parameters():
+            p.requires_grad_(True)  # freeze G
+
+        for p in model_tom.parameters():
+            p.requires_grad_(True)  # freeze G
+
 
         # if step % 5 == 0:
 
