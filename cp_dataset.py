@@ -151,13 +151,16 @@ class CPDataset(data.Dataset):
                 (parse_array == 15).astype(np.float32)
 
         ##### prepare the dilated image
+        print('parse_shape_pre', parse_shape.shape)
         im_array = np.array(im)
+        print('im shape',im.shape)
         dilated_upper_wuton = shrink(im_array, parse_upper, pixel=9)
         dilated_upper_wuton = Image.fromarray(dilated_upper_wuton)
         dilated_upper_wuton = self.transform(dilated_upper_wuton) # [-1,1]
 
         # shape downsample
         parse_shape = Image.fromarray((parse_shape*255).astype(np.uint8))
+        print('parse_shape_post', parse_shape.shape)
         parse_shape = parse_shape.resize((self.fine_width//16, self.fine_height//16), Image.BILINEAR)
         parse_shape = parse_shape.resize((self.fine_width, self.fine_height), Image.BILINEAR)
         shape = self.transform(parse_shape) # [-1,1]
