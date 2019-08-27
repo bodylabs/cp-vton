@@ -249,10 +249,6 @@ def train_wuton(opt, train_loader, model_wuton, board):
         for p in netD.parameters():
             p.requires_grad_(True)  # reset D
 
-        # for p in model_wuton.parameters():
-        #     p.requires_grad_(False)  # freeze G
-
-
         #########paired
         outputs, grid, theta = model_wuton(c, dilated_upper_wuton)
         warped_cloth = F.grid_sample(c, grid, padding_mode='border')
