@@ -259,7 +259,7 @@ def train_wuton(opt, train_loader, model_wuton, board):
         outputs_unpaired = F.tanh(outputs_unpaired)
 
 
-        y = torch.ones(outputs_unpaired.size()[0], 1, 6, 4).to(device) ########all 1
+        y = torch.ones(outputs.size()[0], 1, 6, 4).to(device) ########all 1
 
 
         visuals = [[c, warped_cloth, im_c], 
@@ -308,7 +308,10 @@ def train_wuton(opt, train_loader, model_wuton, board):
             loss_l1 = criterionL1(outputs, im)
             loss_vgg = criterionVGG(outputs, im)
 
-            y_pred_fake_G = netD(outputs_unpaired) # generator
+
+            outputs_unpaired_g, grid_unpaired, theta_unpaired = model_wuton(c, dilated_upper_wuton)
+            outputs_unpaired_g = F.tanh(outputs_unpaired_g)
+            y_pred_fake_G = netD(outputs_unpaired_g) # generator
             loss_g = BCE_stable(y_pred_fake_G - y_pred, y) + loss_warp_l1 + loss_l1 + loss_vgg
             # loss_g = loss_warp_l1 + loss_l1 + loss_vgg
 
@@ -318,7 +321,7 @@ def train_wuton(opt, train_loader, model_wuton, board):
             # else:
             #     loss_g.backward(retain_graph=True)
 
-            loss_g.backward(retain_graph=True)
+            loss_g.backward()
 
             optimizer_G.step()
                 
