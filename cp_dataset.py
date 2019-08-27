@@ -164,7 +164,6 @@ class CPDataset(data.Dataset):
 
         # shape downsample
         parse_shape = Image.fromarray((parse_shape*255).astype(np.uint8))
-        print('parse_shape_post', parse_shape.shape)
         parse_shape = parse_shape.resize((self.fine_width//16, self.fine_height//16), Image.BILINEAR)
         parse_shape = parse_shape.resize((self.fine_width, self.fine_height), Image.BILINEAR)
         shape = self.transform(parse_shape) # [-1,1]
