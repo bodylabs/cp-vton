@@ -280,7 +280,7 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
         for p in netD.parameters():
             p.requires_grad_(False)  # freeze D
 
-        if i % 5 == 0:
+        if step % 5 == 0:
 
             # Generator loss (You may want to resample again from real and fake data)
             optimizer_G.zero_grad()
