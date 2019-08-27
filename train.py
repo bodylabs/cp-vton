@@ -274,7 +274,7 @@ def train_wuton(opt, train_loader, model_wuton, board):
         # Discriminator loss
         optimizer_D.zero_grad()
         y_pred = netD(im)
-        y_pred_fake_D = netD(outputs_unpaired) # discriminator        
+        y_pred_fake_D = netD(outputs_unpaired.detach()) # discriminator        
 
         gradient_penalty = compute_gradient_penalty(netD, im.data.to(device), outputs_unpaired.data.to(device))
         loss_d = BCE_stable(y_pred - y_pred_fake_D, y) + lambda_gp * gradient_penalty
@@ -312,9 +312,9 @@ def train_wuton(opt, train_loader, model_wuton, board):
             loss_l1 = criterionL1(outputs, im)
             loss_vgg = criterionVGG(outputs, im)
 
-            y_pred_fake_G = netD(outputs_unpaired.detach()) # generator
-            loss_g = BCE_stable(y_pred_fake_G - y_pred, y) + loss_warp_l1 + loss_l1 + loss_vgg
-            # loss_g = loss_warp_l1 + loss_l1 + loss_vgg
+            # y_pred_fake_G = netD(outputs_unpaired) # generator
+            # loss_g = BCE_stable(y_pred_fake_G - y_pred, y) + loss_warp_l1 + loss_l1 + loss_vgg
+            loss_g = loss_warp_l1 + loss_l1 + loss_vgg
 
 
             # if step==1:
