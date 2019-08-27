@@ -15,6 +15,7 @@ from p2p_discriminator import define_D
 
 lambda_gp = 10
 
+
 def get_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", default = "GMM")
@@ -192,7 +193,7 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
     criterionL1 = nn.L1Loss()
     criterionVGG = VGGLoss()
 
-    netD = networks.define_D(3, ndf, 'n_layers', 5, norm='batch', init_type='normal', [0,1,2,3])
+    netD = define_D(3, ndf, 'n_layers', 5, norm='batch', init_type='normal', [0,1,2,3])
 
 
     optimizer_G = torch.optim.Adam(wuton.parameters(), lr=opt.lr, betas=(0.5, 0.999))
