@@ -279,7 +279,7 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
             board_add_images(board, 'combine', visuals, step+1)
             board.add_scalar('metric_d', loss_d.item(), step+1)
             t = time.time() - iter_start_time
-            print('step: %8d, time: %.3f, loss_d: %.4f, loss_g: %.4f, warp_l1: %.4f, final_l1: %.4f, vgg: %.4f' 
+            print('step: %8d, time: %.3f, loss_d: %.4f' 
                     % (step+1, t, loss_d.item()), flush=True)
 
         if (step+1) % opt.save_count == 0:
@@ -308,20 +308,21 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
         #         loss_g.backward(retain_graph=True)
         #     optimizer_G.step()
                 
-            if (step+1) % opt.display_count == 0:
-                board_add_images(board, 'combine', visuals, step+1)
-                board.add_scalar('metric_d', loss_d.item(), step+1)
-                board.add_scalar('metric_g', loss_g.item(), step+1)
-                board.add_scalar('warp_L1', loss_warp_l1.item(), step+1)
-                board.add_scalar('final_L1', loss_l1.item(), step+1)
-                board.add_scalar('VGG', loss_vgg.item(), step+1)
-                t = time.time() - iter_start_time
-                print('step: %8d, time: %.3f, loss_d: %.4f, loss_g: %.4f, warp_l1: %.4f, final_l1: %.4f, vgg: %.4f' 
-                        % (step+1, t, loss_d.item(), loss_g.item(), 
-                        warp_l1.item(), final_l1.item(), loss_vgg.item()), flush=True)
+            # if (step+1) % opt.display_count == 0:
+            #     board_add_images(board, 'combine', visuals, step+1)
+            #     board.add_scalar('metric_d', loss_d.item(), step+1)
+            #     board.add_scalar('metric_g', loss_g.item(), step+1)
+            #     board.add_scalar('warp_L1', loss_warp_l1.item(), step+1)
+            #     board.add_scalar('final_L1', loss_l1.item(), step+1)
+            #     board.add_scalar('VGG', loss_vgg.item(), step+1)
+            #     t = time.time() - iter_start_time
+            #     print('step: %8d, time: %.3f, loss_d: %.4f, loss_g: %.4f, warp_l1: %.4f, final_l1: %.4f, vgg: %.4f' 
+            #             % (step+1, t, loss_d.item(), loss_g.item(), 
+            #             warp_l1.item(), final_l1.item(), loss_vgg.item()), flush=True)
 
-            if (step+1) % opt.save_count == 0:
-                save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'step_%06d.pth' % (step+1)))
+            # if (step+1) % opt.save_count == 0:
+            #     save_checkpoint(model_gmm, os.path.join(opt.checkpoint_dir, opt.name, 'gmm_step_%06d.pth' % (step+1)))
+            #     save_checkpoint(model_tom, os.path.join(opt.checkpoint_dir, opt.name, 'tom_step_%06d.pth' % (step+1)))
 
 def main():
     opt = get_opt()
