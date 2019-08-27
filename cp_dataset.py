@@ -43,7 +43,7 @@ def shrink(image, cloth_mask, pixel=-2):
     new_image = image.copy()
     new_image = np.swapaxes(new_image, 0, 1)
     new_image = np.swapaxes(new_image, 1, 2)
-    print('image_shape_post',image.shape)
+    print('image_shape_post',new_image.shape)
 
     fill_pix_indices = cloth_region_position(new_image)
     print (image.shape, cloth_mask.shape)
@@ -157,6 +157,7 @@ class CPDataset(data.Dataset):
 
         ##### prepare the dilated image
         im_array = np.array(im)
+        print('im_array_shape', im_array.shape)
         dilated_upper_wuton = shrink(im_array, parse_upper, pixel=9)
         dilated_upper_wuton = Image.fromarray(dilated_upper_wuton)
         dilated_upper_wuton = self.transform(dilated_upper_wuton) # [-1,1]
