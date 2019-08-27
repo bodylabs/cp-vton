@@ -318,7 +318,7 @@ def train_wuton(opt, train_loader, model_wuton, board):
             # else:
             #     loss_g.backward(retain_graph=True)
 
-            loss_g.backward()
+            loss_g.backward(retain_graph=True)
 
             optimizer_G.step()
                 
