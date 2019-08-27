@@ -224,7 +224,10 @@ def train_wuton(opt, train_loader, model_wuton, board):
 
     netD = define_D(3, 64, 'n_layers', 5, norm='batch', init_type='normal', gpu_ids=[0])
 
-    optimizer_G = torch.optim.Adam(wuton.parameters(), lr=opt.lr, betas=(0.5, 0.999))
+    netD.cuda()
+    netD.train()
+
+    optimizer_G = torch.optim.Adam(model_wuton.parameters(), lr=opt.lr, betas=(0.5, 0.999))
     optimizer_D = torch.optim.Adam(netD.parameters(), lr=opt.lr, betas=(0.5, 0.999), )
 
 
@@ -244,7 +247,7 @@ def train_wuton(opt, train_loader, model_wuton, board):
         # outputs = model_tom(c, dilated_upper_wuton, theta)
         # outputs = F.tanh(outputs)
 
-        outputs, grid, theta = wuton(c, dilated_upper_wuton)
+        outputs, grid, theta = model_wuton(c, dilated_upper_wuton)
         warped_cloth = F.grid_sample(c, grid, padding_mode='border')
         outputs = F.tanh(outputs)
         
@@ -253,7 +256,7 @@ def train_wuton(opt, train_loader, model_wuton, board):
         # outputs_unpaired = model_tom(c_unpaired, dilated_upper_wuton, theta_unpaired)
         # outputs_unpaired = F.tanh(outputs_unpaired)
 
-        outputs_unpaired, grid_unpaired, theta_unpaired = wuton(c, dilated_upper_wuton)
+        outputs_unpaired, grid_unpaired, theta_unpaired = model_wuton(c, dilated_upper_wuton)
         outputs_unpaired = F.tanh(outputs_unpaired)
 
 
