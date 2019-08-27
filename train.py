@@ -299,8 +299,8 @@ def train_wuton(opt, train_loader, model_wuton, board):
             # ---------------------
             #  Train generator
             # # ---------------------
-            for p in netD.parameters():
-                p.requires_grad_(False)  # freeze D
+            # for p in netD.parameters():
+            #     p.requires_grad_(False)  # freeze D
 
             for p in model_wuton.parameters():
                 p.requires_grad_(True)  # reset G
