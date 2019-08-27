@@ -84,7 +84,7 @@ class FeatureExtraction_wuton(nn.Module):
             out_ngf = 2**(i+1) * ngf if 2**i * ngf < 512 else 512
             standardconv = [nn.Conv2d(in_ngf, in_ngf, kernel_size=3, stride=1, padding=1), nn.ReLU(True), norm_layer(in_ngf)]
             downconv = [nn.Conv2d(in_ngf, out_ngf, kernel_size=4, stride=2, padding=1), nn.ReLU(True), norm_layer(out_ngf)]
-            model += [standardconv, downconv]
+            model += (standardconv+downconv)
         
         self.model = nn.Sequential(*model)
         init_weights(self.model, init_type='normal')
