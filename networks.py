@@ -117,7 +117,7 @@ class FeatureCorrelation(nn.Module):
         return correlation_tensor
     
 class FeatureRegression(nn.Module):
-    def __init__(self, input_nc=512,output_dim=6, use_cuda=True):
+    def __init__(self, input_nc=512, output_dim=6, use_cuda=True):
         super(FeatureRegression, self).__init__()
         self.conv = nn.Sequential(
             nn.Conv2d(input_nc, 512, kernel_size=4, stride=2, padding=1),
@@ -133,7 +133,7 @@ class FeatureRegression(nn.Module):
             nn.BatchNorm2d(64),
             nn.ReLU(inplace=True),
         )
-        self.linear = nn.Linear(64 * 4 * 3, output_dim)
+        self.linear = nn.Linear(64 * 8 * 6, output_dim)
         self.tanh = nn.Tanh()
         if use_cuda:
             self.conv.cuda()
