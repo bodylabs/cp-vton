@@ -207,12 +207,15 @@ def compute_gradient_penalty(D, real_samples, fake_samples):
     return gradient_penalty
 
 ############### need to modify the cp_dataset.py before using
-def train_wuton(opt, train_loader, model_gmm, model_tom, board):
-    model_gmm.cuda()
-    model_gmm.train()
+def train_wuton(opt, train_loader, wuton, board):
+    # model_gmm.cuda()
+    # model_gmm.train()
 
-    model_tom.cuda()
-    model_tom.train()
+    # model_tom.cuda()
+    # model_tom.train()
+
+    model_wuton.cuda()
+    model_wuton.train()
 
     BCE_stable = torch.nn.BCEWithLogitsLoss()
     # criterion
@@ -221,8 +224,7 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
 
     netD = define_D(3, 64, 'n_layers', 5, norm='batch', init_type='normal', gpu_ids=[0])
 
-
-    optimizer_G = torch.optim.Adam(list(model_gmm.parameters())+list(model_tom.parameters()), lr=opt.lr, betas=(0.5, 0.999))
+    optimizer_G = torch.optim.Adam(wuton.parameters(), lr=opt.lr, betas=(0.5, 0.999))
     optimizer_D = torch.optim.Adam(netD.parameters(), lr=opt.lr, betas=(0.5, 0.999), )
 
 
@@ -237,15 +239,23 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
         im_c =  inputs['parse_cloth'].cuda()
 
         #########paired
-        grid, theta = model_gmm(c, dilated_upper_wuton)
+        # grid, theta = model_gmm(c, dilated_upper_wuton)
+        # warped_cloth = F.grid_sample(c, grid, padding_mode='border')
+        # outputs = model_tom(c, dilated_upper_wuton, theta)
+        # outputs = F.tanh(outputs)
+
+        outputs, grid, theta = wuton(c, dilated_upper_wuton)
         warped_cloth = F.grid_sample(c, grid, padding_mode='border')
-        outputs = model_tom(c, dilated_upper_wuton, theta)
         outputs = F.tanh(outputs)
         
         ########unpaired
-        grid_unpaired, theta_unpaired = model_gmm(c_unpaired, dilated_upper_wuton)
-        outputs_unpaired = model_tom(c_unpaired, dilated_upper_wuton, theta_unpaired)
+        # grid_unpaired, theta_unpaired = model_gmm(c_unpaired, dilated_upper_wuton)
+        # outputs_unpaired = model_tom(c_unpaired, dilated_upper_wuton, theta_unpaired)
+        # outputs_unpaired = F.tanh(outputs_unpaired)
+
+        outputs_unpaired, grid_unpaired, theta_unpaired = wuton(c, dilated_upper_wuton)
         outputs_unpaired = F.tanh(outputs_unpaired)
+
 
         y = torch.ones(outputs_unpaired.size()[0], 1, 6, 4).to(device) ########all 1
 
@@ -256,11 +266,9 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
         for p in netD.parameters():
             p.requires_grad_(True)  # reset D
 
-        for p in model_gmm.parameters():
+        for p in model_wuton.parameters():
             p.requires_grad_(False)  # freeze G
 
-        for p in model_tom.parameters():
-            p.requires_grad_(False)  # freeze G
 
         visuals = [[c, warped_cloth, im_c], 
                    [outputs, (warped_cloth+im)*0.5, im]]
@@ -290,51 +298,51 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
 
 
 
-        if step % 5 == 0:
+        # if step % 5 == 0:
 
-            # ---------------------
-            #  Train generator
-            # # ---------------------
-            for p in netD.parameters():
-                p.requires_grad_(False)  # freeze D
+        #     # ---------------------
+        #     #  Train generator
+        #     # # ---------------------
+        #     for p in netD.parameters():
+        #         p.requires_grad_(False)  # freeze D
 
-            for p in model_gmm.parameters():
-                p.requires_grad_(True)  # reset G
+        #     for p in model_gmm.parameters():
+        #         p.requires_grad_(True)  # reset G
 
-            for p in model_tom.parameters():
-                p.requires_grad_(True)  # reset G
+        #     for p in model_tom.parameters():
+        #         p.requires_grad_(True)  # reset G
 
 
-            # Generator loss (You may want to resample again from real and fake data)
-            optimizer_G.zero_grad()
-            loss_warp_l1 = criterionL1(warped_cloth, im_c)    
-            loss_l1 = criterionL1(outputs, im)
-            loss_vgg = criterionVGG(outputs, im)
+        #     # Generator loss (You may want to resample again from real and fake data)
+        #     optimizer_G.zero_grad()
+        #     loss_warp_l1 = criterionL1(warped_cloth, im_c)    
+        #     loss_l1 = criterionL1(outputs, im)
+        #     loss_vgg = criterionVGG(outputs, im)
 
-            y_pred_fake_G = netD(outputs_unpaired.detach()) # generator
-            loss_g = BCE_stable(y_pred_fake_G - y_pred, y) + loss_warp_l1 + loss_l1 + loss_vgg
+        #     y_pred_fake_G = netD(outputs_unpaired.detach()) # generator
+        #     loss_g = BCE_stable(y_pred_fake_G - y_pred, y) + loss_warp_l1 + loss_l1 + loss_vgg
 
-            if step==1:
-                loss_g.backward(retain_graph=True)
-            else:
-                loss_g.backward(retain_graph=True)
-            optimizer_G.step()
+        #     if step==1:
+        #         loss_g.backward(retain_graph=True)
+        #     else:
+        #         loss_g.backward(retain_graph=True)
+        #     optimizer_G.step()
                 
-            if (step+1) % opt.display_count == 0:
-                board_add_images(board, 'combine', visuals, step+1)
-                board.add_scalar('metric_d', loss_d.item(), step+1)
-                board.add_scalar('metric_g', loss_g.item(), step+1)
-                board.add_scalar('warp_L1', loss_warp_l1.item(), step+1)
-                board.add_scalar('final_L1', loss_l1.item(), step+1)
-                board.add_scalar('VGG', loss_vgg.item(), step+1)
-                t = time.time() - iter_start_time
-                print('step: %8d, time: %.3f, loss_d: %.4f, loss_g: %.4f, warp_l1: %.4f, final_l1: %.4f, vgg: %.4f' 
-                        % (step+1, t, loss_d.item(), loss_g.item(), 
-                        warp_l1.item(), final_l1.item(), loss_vgg.item()), flush=True)
+        #     if (step+1) % opt.display_count == 0:
+        #         board_add_images(board, 'combine', visuals, step+1)
+        #         board.add_scalar('metric_d', loss_d.item(), step+1)
+        #         board.add_scalar('metric_g', loss_g.item(), step+1)
+        #         board.add_scalar('warp_L1', loss_warp_l1.item(), step+1)
+        #         board.add_scalar('final_L1', loss_l1.item(), step+1)
+        #         board.add_scalar('VGG', loss_vgg.item(), step+1)
+        #         t = time.time() - iter_start_time
+        #         print('step: %8d, time: %.3f, loss_d: %.4f, loss_g: %.4f, warp_l1: %.4f, final_l1: %.4f, vgg: %.4f' 
+        #                 % (step+1, t, loss_d.item(), loss_g.item(), 
+        #                 warp_l1.item(), final_l1.item(), loss_vgg.item()), flush=True)
 
-            if (step+1) % opt.save_count == 0:
-                save_checkpoint(model_gmm, os.path.join(opt.checkpoint_dir, opt.name, 'gmm_step_%06d.pth' % (step+1)))
-                save_checkpoint(model_tom, os.path.join(opt.checkpoint_dir, opt.name, 'tom_step_%06d.pth' % (step+1)))
+        #     if (step+1) % opt.save_count == 0:
+        #         save_checkpoint(model_gmm, os.path.join(opt.checkpoint_dir, opt.name, 'gmm_step_%06d.pth' % (step+1)))
+        #         save_checkpoint(model_tom, os.path.join(opt.checkpoint_dir, opt.name, 'tom_step_%06d.pth' % (step+1)))
 
 def main():
     opt = get_opt()
@@ -366,11 +374,12 @@ def main():
         train_tom(opt, train_loader, model, board)
         save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'tom_final.pth'))
     else:
-        model_gmm = GMM(opt)
-        model_tom = UnetGenerator(3, 3, 5, ngf=16, norm_layer=nn.InstanceNorm2d)
-        train_wuton(opt, train_loader, model_gmm, model_tom, board)
-        save_checkpoint(model_gmm, os.path.join(opt.checkpoint_dir, opt.name, 'wuton_gmm_final.pth'))
-        save_checkpoint(model_tom, os.path.join(opt.checkpoint_dir, opt.name, 'wuton_tom_final.pth'))
+        # model_gmm = GMM(opt)
+        # model_tom = UnetGenerator(3, 3, 5, ngf=16, norm_layer=nn.InstanceNorm2d)
+        model_wuton = WUTON(opt, 3, 3, 5, ngf=16, norm_layer=nn.InstanceNorm2d)
+        # train_wuton(opt, train_loader, model_gmm, model_tom, board)
+        train_wuton(opt, train_loader, model_wuton, board)
+        save_checkpoint(model_wuton, os.path.join(opt.checkpoint_dir, opt.name, 'wuton_final.pth'))
 
         # raise NotImplementedError('Model [%s] is not implemented' % opt.stage)
         

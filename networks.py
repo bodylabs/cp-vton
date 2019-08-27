@@ -502,6 +502,21 @@ class GMM(nn.Module):
         grid = self.gridGen(theta)
         return grid, theta
 
+
+class WUTON(nn.Module):
+    """ Geometric Matching Module
+    """
+    def __init__(self, opt, input_nc=3, output_nc=3, num_downs=5, ngf=16,
+                 norm_layer=nn.BatchNorm2d, use_dropout=False):
+        super(WUTON, self).__init__()
+        self.gmm = GMM(opt)
+        self.tom = UnetGenerator(input_nc, output_nc, num_downs, ngf=ngf, norm_layer=norm_layer)
+        
+    def forward(self, c, dilated_upper_wuton):
+        grid, theta = self.gmm(c, dilated_upper_wuton)
+        return self.tom(c, dilated_upper_wuton, theta), grid, theta
+
+
 def save_checkpoint(model, save_path):
     if not os.path.exists(os.path.dirname(save_path)):
         os.makedirs(os.path.dirname(save_path))
@@ -514,4 +529,3 @@ def load_checkpoint(model, checkpoint_path):
         return
     model.load_state_dict(torch.load(checkpoint_path))
     model.cuda()
-
