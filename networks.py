@@ -423,7 +423,7 @@ class UnetSkipConnectionBlock(nn.Module):
 
                 down_result_c = self.down(input_c)
                 down_result_ap = self.down_2(input_ap)
-                submodule_result = self.submodule(down_result_c, down_result_cp, theta)
+                submodule_result = self.submodule(down_result_c, down_result_ap, theta)
                 up_result = self.up(submodule_result)
                 return torch.cat([warped_c, input_ap, up_result], 1)
 
