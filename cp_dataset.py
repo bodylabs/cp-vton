@@ -12,8 +12,7 @@ import json
 import os
 import cv2
 from scipy import ndimage
-import random 
-
+from random import randrange
 
 train_cloth_ids = np.load('train_cloth_ids.npy').tolist()
 test_cloth_ids = np.load('test_cloth_ids.npy').tolist()
@@ -97,11 +96,13 @@ class CPDataset(data.Dataset):
         im_name = self.im_names[index]
 
         if self.datamode == 'test':
-            others = test_cloth_ids.remove(c_name)
-            unpair_c_name = random.sample(others,1)
+            test_cloth_ids.remove(c_name)
+            lenth = len(test_cloth_ids)
+            unpair_c_name = list(test_cloth_ids)[randrange(lenth)]
         else:
-            others = train_cloth_ids.remove(c_name)
-            unpair_c_name = random.sample(others,1)
+            train_cloth_ids.remove(c_name)
+            lenth = len(train_cloth_ids)
+            unpair_c_name = list(train_cloth_ids)[randrange(lenth)]
 
         # cloth image & cloth mask
         # if self.stage == 'GMM':
