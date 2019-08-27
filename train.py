@@ -16,6 +16,7 @@ from visualization import board_add_image, board_add_images
 from p2p_discriminator import define_D
 
 lambda_gp = 10
+device = torch.device("cuda" if 1 else "cpu")
 
 Tensor = torch.cuda.FloatTensor if 1 else torch.FloatTensor
 
@@ -184,11 +185,14 @@ def get_opt():
 def compute_gradient_penalty(D, real_samples, fake_samples):
     """Calculates the gradient penalty loss for WGAN GP"""
     # Random weight term for interpolation between real and fake samples
-    alpha = Tensor(np.random.random((real_samples.size(0), 1, 1, 1)))
+    alpha = Tensor(np.random.random((real_samples.size(0), 1, 1, 1))).to(device)
     # Get random interpolation between real and fake samples
     interpolates = (alpha * real_samples + ((1 - alpha) * fake_samples)).requires_grad_(True)
+    interpolates = interpolates.to(device)
+    interpolates.requires_grad_(True)
+
     d_interpolates = D(interpolates)
-    fake = Variable(Tensor(real_samples.shape[0], 1, 6, 4).fill_(1.0), requires_grad=False)
+    fake = Variable(Tensor(real_samples.shape[0], 1, 6, 4).fill_(1.0), requires_grad=False).to(device)
     # Get gradient w.r.t. interpolates
     gradients = autograd.grad(
         outputs=d_interpolates,
@@ -243,7 +247,7 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
         outputs_unpaired = model_tom(c_unpaired, dilated_upper_wuton, theta_unpaired)
         outputs_unpaired = F.tanh(outputs_unpaired)
 
-        y = torch.ones(outputs_unpaired.size()[0], 1, 6, 4) ########all 1
+        y = torch.ones(outputs_unpaired.size()[0], 1, 6, 4).cuda() ########all 1
 
         # ---------------------
         #  Train Discriminator
