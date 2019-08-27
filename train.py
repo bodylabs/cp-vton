@@ -293,7 +293,7 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
             if step==1:
                 loss_g.backward(retain_graph=True)
             else:
-                loss_g.backward()
+                loss_g.backward(retain_graph=True)
             optimizer_G.step()
                 
             if (step+1) % opt.display_count == 0:
