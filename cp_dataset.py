@@ -41,6 +41,7 @@ def outer_distance(segmentation_one_channel):
 def shrink(image, cloth_mask, pixel=-2):
     new_image = image.copy()
     fill_pix_indices = cloth_region_position(new_image)
+    import pdb;pdb.set_trace()
     # new_image[fill_pix_indices[:,0],fill_pix_indices[:,1]] = np.array([0.,0.,0.])
     
     # segmentation = np.zeros_like(new_image)[:,:,0]
@@ -53,7 +54,7 @@ def shrink(image, cloth_mask, pixel=-2):
     shrink_idx = np.where(shrink_idx)
     shrink_idx = np.squeeze(np.array([shrink_idx])).T
     
-    new_image[shrink_idx[:,0],shrink_idx[:,1]] = np.array([128,128,128])
+    new_image[shrink_idx[:,0],shrink_idx[:,1],:] = np.array([128,128,128])
     
     return new_image
 
