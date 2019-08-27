@@ -241,6 +241,18 @@ def train_wuton(opt, train_loader, model_wuton, board):
         dilated_upper_wuton = inputs['dilated_upper_wuton'].cuda()
         im_c =  inputs['parse_cloth'].cuda()
 
+
+        # ---------------------
+        #  Train Discriminator
+        # ---------------------
+
+        for p in netD.parameters():
+            p.requires_grad_(True)  # reset D
+
+        for p in model_wuton.parameters():
+            p.requires_grad_(False)  # freeze G
+
+
         #########paired
         outputs, grid, theta = model_wuton(c, dilated_upper_wuton)
         warped_cloth = F.grid_sample(c, grid, padding_mode='border')
@@ -252,16 +264,6 @@ def train_wuton(opt, train_loader, model_wuton, board):
 
 
         y = torch.ones(outputs_unpaired.size()[0], 1, 6, 4).to(device) ########all 1
-
-        # ---------------------
-        #  Train Discriminator
-        # ---------------------
-
-        for p in netD.parameters():
-            p.requires_grad_(True)  # reset D
-
-        for p in model_wuton.parameters():
-            p.requires_grad_(False)  # freeze G
 
 
         visuals = [[c, warped_cloth, im_c], 
