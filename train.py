@@ -8,6 +8,7 @@ import os
 import time
 from cp_dataset import CPDataset, CPDataLoader
 from networks import GMM, UnetGenerator, VGGLoss, load_checkpoint, save_checkpoint
+from torch.autograd import Variable
 
 from tensorboardX import SummaryWriter
 from visualization import board_add_image, board_add_images
