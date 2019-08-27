@@ -268,7 +268,7 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
         y_pred = netD(im)
         y_pred_fake_D = netD(outputs_unpaired) # discriminator
 
-        print (y_pred.size(), y_pred_fake_D.size())
+        print (im.size(), outputs_unpaired.size(), y_pred.size())
         
 
         gradient_penalty = compute_gradient_penalty(netD, im.data.to(device), outputs_unpaired.data.to(device))
