@@ -7,7 +7,7 @@ import argparse
 import os
 import time
 from cp_dataset import CPDataset, CPDataLoader
-from networks import GMM, UnetGenerator, VGGLoss, load_checkpoint, save_checkpoint
+from networks import GMM, UnetGenerator, VGGLoss, load_checkpoint, save_checkpoint, WUTON
 from torch.autograd import Variable
 import torch.autograd as autograd
 
