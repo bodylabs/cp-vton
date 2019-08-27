@@ -294,7 +294,7 @@ def train_wuton(opt, train_loader, model_wuton, board):
 
 
 
-        if step % 5 == 0:
+        if (step+1) % 5 == 0:
 
             # ---------------------
             #  Train generator
