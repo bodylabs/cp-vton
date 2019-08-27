@@ -154,31 +154,50 @@ def get_opt():
 #             save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'step_%06d.pth' % (step+1)))
 
 
-def calc_gradient_penalty(netD, real_data, fake_data, BATCH_SIZE):
-    alpha = torch.rand(BATCH_SIZE, 1)
-    alpha = alpha.expand(BATCH_SIZE, int(real_data.nelement()/BATCH_SIZE)).contiguous()
-    alpha = alpha.view(BATCH_SIZE, 3, DIM, DIM)
-    alpha = alpha.to(device)
+# def calc_gradient_penalty(netD, real_data, fake_data, BATCH_SIZE):
+#     alpha = torch.rand(BATCH_SIZE, 1)
+#     alpha = alpha.expand(BATCH_SIZE, int(real_data.nelement()/BATCH_SIZE)).contiguous()
+#     alpha = alpha.view(BATCH_SIZE, 3, DIM, DIM)
+#     alpha = alpha.to(device)
     
-    fake_data = fake_data.view(BATCH_SIZE, 3, DIM, DIM)
-    interpolates = (alpha * real_data.detach() + ((1 - alpha) * fake_data.detach())).requires_grad_(True)
+#     fake_data = fake_data.view(BATCH_SIZE, 3, DIM, DIM)
+#     interpolates = (alpha * real_data.detach() + ((1 - alpha) * fake_data.detach())).requires_grad_(True)
 
-    interpolates = interpolates.to(device)
-    interpolates.requires_grad_(True)
+#     interpolates = interpolates.to(device)
+#     interpolates.requires_grad_(True)
 
-    disc_interpolates = netD(interpolates)
+#     disc_interpolates = netD(interpolates)
 
-    gradients = autograd.grad(outputs=disc_interpolates, inputs=interpolates,
-                              grad_outputs=torch.ones(disc_interpolates.size()).to(device),
-                              create_graph=True, retain_graph=True, only_inputs=True)[0]
+#     gradients = autograd.grad(outputs=disc_interpolates, inputs=interpolates,
+#                               grad_outputs=torch.ones(disc_interpolates.size()).to(device),
+#                               create_graph=True, retain_graph=True, only_inputs=True)[0]
 
-    gradients = gradients.view(gradients.size(0), -1)                              
+#     gradients = gradients.view(gradients.size(0), -1)                              
+#     gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
+#     return gradient_penalty
+
+
+
+def compute_gradient_penalty(D, real_samples, fake_samples):
+    """Calculates the gradient penalty loss for WGAN GP"""
+    # Random weight term for interpolation between real and fake samples
+    alpha = Tensor(np.random.random((real_samples.size(0), 1, 1, 1)))
+    # Get random interpolation between real and fake samples
+    interpolates = (alpha * real_samples + ((1 - alpha) * fake_samples)).requires_grad_(True)
+    d_interpolates = D(interpolates)
+    fake = Variable(Tensor(real_samples.shape[0], 1).fill_(1.0), requires_grad=False)
+    # Get gradient w.r.t. interpolates
+    gradients = autograd.grad(
+        outputs=d_interpolates,
+        inputs=interpolates,
+        grad_outputs=fake,
+        create_graph=True,
+        retain_graph=True,
+        only_inputs=True,
+    )[0]
+    gradients = gradients.view(gradients.size(0), -1)
     gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
     return gradient_penalty
-
-
-
-
 
 ############### need to modify the cp_dataset.py before using
 def train_wuton(opt, train_loader, model_gmm, model_tom, board):
@@ -243,7 +262,7 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
         y_pred_fake_D = netD(outputs_unpaired) # discriminator
         
 
-        gradient_penalty = calc_gradient_penalty(netD, im.data, outputs_unpaired.data, opt.batch_size)
+        gradient_penalty = compute_gradient_penalty(netD, im.data, outputs_unpaired.data)
 
         loss_d = BCE_stable(y_pred - y_pred_fake_D, y) + lambda_gp * gradient_penalty
 
