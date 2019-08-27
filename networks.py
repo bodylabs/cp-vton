@@ -133,7 +133,7 @@ class FeatureRegression(nn.Module):
             nn.BatchNorm2d(64),
             nn.ReLU(inplace=True),
         )
-        self.linear = nn.Linear(64 * 8 * 6, output_dim)
+        self.linear = nn.Linear(128, output_dim)
         self.tanh = nn.Tanh()
         if use_cuda:
             self.conv.cuda()
