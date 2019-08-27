@@ -193,7 +193,7 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
     criterionL1 = nn.L1Loss()
     criterionVGG = VGGLoss()
 
-    netD = define_D(3, 64, 'n_layers', 5, norm='batch', init_type='normal', gpu_ids=[0,1,2,3])
+    netD = define_D(3, 64, 'n_layers', 5, norm='batch', init_type='normal', gpu_ids=[0])
 
 
     optimizer_G = torch.optim.Adam(wuton.parameters(), lr=opt.lr, betas=(0.5, 0.999))
