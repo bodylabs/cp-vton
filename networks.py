@@ -329,6 +329,7 @@ class UnetSkipConnectionBlock(nn.Module):
         super(UnetSkipConnectionBlock, self).__init__()
 
         self.outermost = outermost
+        self.innermost = innermost
         use_bias = norm_layer == nn.InstanceNorm2d
 
         if input_nc is None:
@@ -403,7 +404,7 @@ class UnetSkipConnectionBlock(nn.Module):
             up_result = self.up(submodule_result)
             return up_result
         else:
-            if innermost:
+            if self.innermost:
                 xb,xc,xh,xw = input_c.size()
                 grid_function = TpsGridGen(xh, xw, use_cuda=True, grid_size=5)
                 grid = grid_function(theta)
