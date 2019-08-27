@@ -154,7 +154,7 @@ def get_opt():
 #             save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'step_%06d.pth' % (step+1)))
 
 
-def calc_gradient_penalty(netD, real_data, fake_data):
+def calc_gradient_penalty(netD, real_data, fake_data, BATCH_SIZE):
     alpha = torch.rand(BATCH_SIZE, 1)
     alpha = alpha.expand(BATCH_SIZE, int(real_data.nelement()/BATCH_SIZE)).contiguous()
     alpha = alpha.view(BATCH_SIZE, 3, DIM, DIM)
@@ -243,7 +243,7 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
         y_pred_fake_D = netD(outputs_unpaired) # discriminator
         
 
-        gradient_penalty = calc_gradient_penalty(netD, im.data, outputs_unpaired.data)
+        gradient_penalty = calc_gradient_penalty(netD, im.data, outputs_unpaired.data, opt.batch_size)
 
         loss_d = BCE_stable(y_pred - y_pred_fake_D, y) + lambda_gp * gradient_penalty
 
