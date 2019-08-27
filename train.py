@@ -243,7 +243,7 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
         outputs_unpaired = model_tom(c_unpaired, dilated_upper_wuton, theta_unpaired)
         outputs_unpaired = F.tanh(outputs_unpaired)
 
-        y = torch.ones(outputs_unpaired.size()[0]) ########all 1
+        y = torch.ones(outputs_unpaired.size()[0], 1, 6, 4) ########all 1
 
         # ---------------------
         #  Train Discriminator
@@ -266,12 +266,7 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
         
 
         gradient_penalty = compute_gradient_penalty(netD, im.data, outputs_unpaired.data)
-        print(y_pred.size(), y_pred.size(), y.size())
-        wocao=BCE_stable(y_pred - y_pred_fake_D, y)
-        wocao2 = lambda_gp * gradient_penalty
-        print(wocao.size(), wocao2.size())
-        # loss_d = BCE_stable(y_pred - y_pred_fake_D, y) + lambda_gp * gradient_penalty
-        loss_d = 1
+        loss_d = BCE_stable(y_pred - y_pred_fake_D, y) + lambda_gp * gradient_penalty
         loss_d.backward()
         optimizer_D.step()
 
