@@ -266,9 +266,11 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
         
 
         gradient_penalty = compute_gradient_penalty(netD, im.data, outputs_unpaired.data)
-
-        loss_d = BCE_stable(y_pred - y_pred_fake_D, y) + lambda_gp * gradient_penalty
-
+        wocao=BCE_stable(y_pred - y_pred_fake_D, y)
+        wocao2 = lambda_gp * gradient_penalty
+        print(wocao.size(), wocao2.size())
+        # loss_d = BCE_stable(y_pred - y_pred_fake_D, y) + lambda_gp * gradient_penalty
+        loss_d = 1
         loss_d.backward()
         optimizer_D.step()
 
