@@ -390,7 +390,7 @@ class UnetSkipConnectionBlock(nn.Module):
         # uprelu_2 = nn.ReLU(True)
         # upnorm_2 = norm_layer(outer_nc)
 
-        down_2 = standard_downconv_2 + downconv_2 + downrelu_2 + downnorm_2
+        down_2 = standard_downconv_2 + [downconv_2, downrelu_2, downnorm_2]
         self.down_2 = nn.Sequential(*down_2)
 
 
