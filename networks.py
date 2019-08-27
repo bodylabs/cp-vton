@@ -75,7 +75,7 @@ def init_weights(net, init_type='normal'):
 
 class FeatureExtraction_wuton(nn.Module):
     def __init__(self, input_nc, ngf=16, n_layers=4, norm_layer=nn.BatchNorm2d, use_dropout=False):
-        super(FeatureExtraction, self).__init__()
+        super(FeatureExtraction_wuton, self).__init__()
         standardconv = [nn.Conv2d(input_nc, input_nc, kernel_size=3, stride=1, padding=1), nn.ReLU(True), norm_layer(input_nc)]
         downconv = [nn.Conv2d(input_nc, ngf, kernel_size=4, stride=2, padding=1), nn.ReLU(True), norm_layer(ngf)]
         model = standardconv + downconv
