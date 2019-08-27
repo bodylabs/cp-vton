@@ -221,7 +221,7 @@ def train_wuton(opt, train_loader, model_gmm, model_tom, board):
         outputs_unpaired = model_tom(c_unpaired, dilated_upper_wuton, theta_unpaired)
         outputs_unpaired = F.tanh(outputs_unpaired)
 
-        y = torch.ones_like(outputs_unpaired.size()[0]) ########all 1
+        y = torch.ones(outputs_unpaired.size()[0]) ########all 1
 
         # ---------------------
         #  Train Discriminator
