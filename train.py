@@ -310,9 +310,10 @@ def train_wuton(opt, train_loader, model_wuton, board):
             loss_l1 = criterionL1(outputs, im)
             loss_vgg = criterionVGG(outputs, im)
 
-            y_pred_G = netD(im.detach())
             y_pred_fake_G = netD(outputs_unpaired.detach()) # generator
-            loss_g = BCE_stable(y_pred_fake_G - y_pred_G, y) + loss_warp_l1 + loss_l1 + loss_vgg
+            # loss_g = BCE_stable(y_pred_fake_G - y_pred, y) + loss_warp_l1 + loss_l1 + loss_vgg
+            loss_g = loss_warp_l1 + loss_l1 + loss_vgg
+
 
             # if step==1:
             #     loss_g.backward(retain_graph=True)
