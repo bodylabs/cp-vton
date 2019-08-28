@@ -246,8 +246,8 @@ def train_wuton(opt, train_loader, model_wuton, board):
         #  Train Discriminator
         # ---------------------
 
-        for p in netD.parameters():
-            p.requires_grad_(True)  # reset D
+        # for p in netD.parameters():
+        #     p.requires_grad_(True)  # reset D
 
         #########paired
         outputs, grid, theta = model_wuton(c, dilated_upper_wuton)
