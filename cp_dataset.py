@@ -38,27 +38,14 @@ def outer_distance(segmentation_one_channel):
     outer_dis = ndimage.distance_transform_edt(np.logical_not(segmentation_one_channel))
     return outer_dis
 
-def shrink(image, cloth_mask, pixel=-2):
-    new_image = image.copy()
-    new_image = np.swapaxes(new_image, 0, 1)
-    new_image = np.swapaxes(new_image, 1, 2)
-
-    fill_pix_indices = cloth_region_position(new_image)
-    # new_image[fill_pix_indices[:,0],fill_pix_indices[:,1]] = np.array([0.,0.,0.])
-    
-    # segmentation = np.zeros_like(new_image)[:,:,0]
-    # segmentation[fill_pix_indices[:,0], fill_pix_indices[:,1]] = 1
+def shrink(cloth_mask, pixel=-2):
     inner_dis = inner_distance(cloth_mask)
     outer_dis = outer_distance(cloth_mask)
     combine_dis = inner_dis*(-1)+outer_dis
     
-    shrink_idx = combine_dis<=pixel
-    shrink_idx = np.where(shrink_idx)
-    shrink_idx = np.squeeze(np.array([shrink_idx])).T
+    new_masks = combine_dis<=pixel
     
-    new_image[shrink_idx[:,0],shrink_idx[:,1],:] = np.array([128,128,128])
-    
-    return new_image
+    return new_masks
 
 class CPDataset(data.Dataset):
     """Dataset for CP-VTON.
@@ -153,10 +140,7 @@ class CPDataset(data.Dataset):
                 (parse_array == 15).astype(np.float32)
 
         ##### prepare the dilated image
-        im_array = np.array(im)
-        dilated_upper_wuton = shrink(im_array, parse_upper, pixel=9)
-        dilated_upper_wuton = Image.fromarray(dilated_upper_wuton.astype(np.uint8))
-        dilated_upper_wuton = self.transform(dilated_upper_wuton) # [-1,1]
+        dilated_mask = torch.from_numpy(shrink(parse_upper, pixel=9))
 
         # shape downsample
         parse_shape = Image.fromarray((parse_shape*255).astype(np.uint8))
@@ -165,12 +149,13 @@ class CPDataset(data.Dataset):
         shape = self.transform(parse_shape) # [-1,1]
         phead = torch.from_numpy(parse_head) # [0,1]
         pcm = torch.from_numpy(parse_cloth) # [0,1]
-        pcm_top = Image.fromarray((parse_cloth_top*255).astype(np.uint8))
-        pcm_top = self.transform(pcm_top) # [-1,1]
+        # pcm_top = Image.fromarray((parse_cloth_top*255).astype(np.uint8))
+        # pcm_top = self.transform(pcm_top) # [-1,1]
          
         # upper cloth
         im_c = im * pcm + (1 - pcm) # [-1,1], fill 1 for other parts
         im_h = im * phead - (1 - phead) # [-1,1], fill 0 for other parts
+        im_dilated = im * (1-dilated_mask)
 
         # load pose points
         pose_name = im_name.replace('.jpg', '_keypoints.json')
@@ -201,7 +186,7 @@ class CPDataset(data.Dataset):
         
         # cloth-agnostic representation
         agnostic = torch.cat([shape, im_h, pose_map], 0) 
-        agnostic_cloth = torch.cat([shape, im_h, pose_map, pcm_top], 0) 
+        # agnostic_cloth = torch.cat([shape, im_h, pose_map, pcm_top], 0) 
 
         im_g = Image.open('grid.png')
         im_g = self.transform(im_g)
@@ -220,7 +205,7 @@ class CPDataset(data.Dataset):
             'grid_image': im_g,     # for visualization
             # 'top_cloth_parse': pcm_top,
             # 'agnostic_cloth': agnostic_cloth,
-            'dilated_upper_wuton': dilated_upper_wuton,
+            'dilated_upper_wuton': im_dilated,
             'c_unpaired': c_unpair,
             }
 
