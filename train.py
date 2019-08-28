@@ -184,9 +184,9 @@ def train_wuton(opt, train_loader, model_wuton, board):
 
             # outputs_unpaired_g, grid_unpaired, theta_unpaired = model_wuton(c_unpaired, dilated_upper_wuton)
             # outputs_unpaired_g = F.tanh(outputs_unpaired_g)
-            # y_pred_G = netD(im)
+            y_pred_G = netD(im)
             y_pred_fake_G = netD(outputs_unpaired) # generator
-            relativistic_loss_g = BCE_stable(y_pred_fake_G - y_pred, y)
+            relativistic_loss_g = BCE_stable(y_pred_fake_G - y_pred_G, y)
             loss_g = relativistic_loss_g + loss_warp_l1 + loss_l1 + loss_vgg
 
             visuals = [[c, (warped_grid+warped_cloth)*0.5, im_c], 
