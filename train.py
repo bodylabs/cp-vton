@@ -236,6 +236,7 @@ def train_wuton(opt, train_loader, model_wuton, board):
         inputs = train_loader.next_batch()
             
         im = inputs['image'].cuda()
+        im_g = inputs['grid_image'].cuda()
         c = inputs['cloth'].cuda()
         c_unpaired = inputs['c_unpaired'].cuda()
         dilated_upper_wuton = inputs['dilated_upper_wuton'].cuda()
@@ -255,6 +256,7 @@ def train_wuton(opt, train_loader, model_wuton, board):
         #########paired
         outputs, grid, theta = model_wuton(c, dilated_upper_wuton)
         warped_cloth = F.grid_sample(c, grid, padding_mode='border')
+        warped_grid = F.grid_sample(im_g, grid, padding_mode='zeros')
         outputs = F.tanh(outputs)
         
         ########unpaired
@@ -265,8 +267,8 @@ def train_wuton(opt, train_loader, model_wuton, board):
         y = torch.ones(outputs.size()[0], 1, 6, 4).to(device) ########all 1
 
 
-        visuals = [[c, warped_cloth, im_c], 
-                   [outputs, (warped_cloth+im)*0.5, im]]
+        visuals = [[c, (warped_grid+warped_cloth)*0.5, im_c], 
+                   [dilated_upper_wuton, outputs, im]]
 
 
 
