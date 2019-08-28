@@ -182,10 +182,10 @@ def train_wuton(opt, train_loader, model_wuton, board):
             loss_vgg = criterionVGG(outputs, im)
 
 
-            # outputs_unpaired_g, grid_unpaired, theta_unpaired = model_wuton(c_unpaired, dilated_upper_wuton)
-            # outputs_unpaired_g = F.tanh(outputs_unpaired_g)
+            outputs_unpaired_g, grid_unpaired, theta_unpaired = model_wuton(c_unpaired, dilated_upper_wuton)
+            outputs_unpaired_g = F.tanh(outputs_unpaired_g)
             y_pred_G = netD(im)
-            y_pred_fake_G = netD(outputs_unpaired) # generator
+            y_pred_fake_G = netD(outputs_unpaired_g) # generator
             relativistic_loss_g = BCE_stable(y_pred_fake_G - y_pred_G, y)
             loss_g = relativistic_loss_g + loss_warp_l1 + loss_l1 + loss_vgg
 
