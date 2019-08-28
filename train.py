@@ -144,7 +144,7 @@ def train_wuton(opt, train_loader, model_wuton, board):
 
 
         if (step+1) % opt.display_count == 0:
-            board_add_images(board, 'combine', visuals, step+1)
+            # board_add_images(board, 'combine', visuals, step+1)
             board.add_scalar('metric_d', loss_d.item(), step+1)
             board.add_scalar('relativistic_loss_d', relativistic_loss_d.item(), step+1)
             t = time.time() - iter_start_time
