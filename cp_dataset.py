@@ -140,7 +140,7 @@ class CPDataset(data.Dataset):
                 (parse_array == 15).astype(np.float32)
 
         ##### prepare the dilated image
-        dilated_mask = torch.from_numpy(shrink(parse_upper, pixel=9))
+        dilated_mask = torch.from_numpy(shrink(parse_upper.astype(unit8), pixel=9))
 
         # shape downsample
         parse_shape = Image.fromarray((parse_shape*255).astype(np.uint8))
