@@ -45,7 +45,7 @@ def shrink(cloth_mask, pixel=-2):
     
     new_masks = combine_dis<=pixel
     
-    return new_masks
+    return new_masks.astype(np.float32)
 
 class CPDataset(data.Dataset):
     """Dataset for CP-VTON.
@@ -140,7 +140,7 @@ class CPDataset(data.Dataset):
                 (parse_array == 15).astype(np.float32)
 
         ##### prepare the dilated image
-        dilated_mask = torch.from_numpy(shrink(parse_upper, pixel=9).astype(np.unit8))
+        dilated_mask = torch.from_numpy(shrink(parse_upper, pixel=9))
 
         # shape downsample
         parse_shape = Image.fromarray((parse_shape*255).astype(np.uint8))
