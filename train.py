@@ -295,8 +295,8 @@ def train_wuton(opt, train_loader, model_wuton, board):
             # ---------------------
             #  Train generator
             # # ---------------------
-            # for p in netD.parameters():
-            #     p.requires_grad_(False)  # freeze D
+            for p in netD.parameters():
+                p.requires_grad_(False)  # freeze D
 
             # for p in model_wuton.parameters():
             #     p.requires_grad_(True)  # reset G
@@ -312,7 +312,8 @@ def train_wuton(opt, train_loader, model_wuton, board):
             outputs_unpaired_g, grid_unpaired, theta_unpaired = model_wuton(c, dilated_upper_wuton)
             outputs_unpaired_g = F.tanh(outputs_unpaired_g)
             y_pred_fake_G = netD(outputs_unpaired_g) # generator
-            loss_g = BCE_stable(y_pred_fake_G - y_pred, y) + loss_warp_l1 + loss_l1 + loss_vgg
+            y_pred_G = netD(im)
+            loss_g = BCE_stable(y_pred_fake_G - y_pred_G, y) + loss_warp_l1 + loss_l1 + loss_vgg
             # loss_g = loss_warp_l1 + loss_l1 + loss_vgg
 
 
