@@ -76,7 +76,7 @@ def compute_gradient_penalty(D, real_samples, fake_samples):
     return gradient_penalty
 
 ############### need to modify the cp_dataset.py before using
-def train_wuton(opt, train_loader, model_wuton, board):
+def train_wuton(opt, train_loader, model_wuton, board, netD):
     # model_gmm.cuda()
     # model_gmm.train()
 
@@ -91,7 +91,7 @@ def train_wuton(opt, train_loader, model_wuton, board):
     criterionL1 = nn.L1Loss()
     criterionVGG = VGGLoss()
 
-    netD = define_D(3, 64, 'n_layers', 5, norm='batch', init_type='normal', gpu_ids=[0])
+    # netD = define_D(3, 64, 'n_layers', 5, norm='batch', init_type='normal', gpu_ids=[0])
 
     netD.cuda()
     netD.train()
@@ -245,10 +245,13 @@ def main():
         save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'tom_final.pth'))
     else:
         model_wuton = WUTON(opt, 3, 3, 5, ngf=16, norm_layer=nn.InstanceNorm2d)
+        netD = define_D(3, 64, 'n_layers', 5, norm='batch', init_type='normal', gpu_ids=[0])
         if not opt.checkpoint =='' and os.path.exists(opt.checkpoint):
             load_checkpoint(model_wuton, opt.checkpoint)
-        train_wuton(opt, train_loader, model_wuton, board)
+            load_checkpoint(netD, opt.checkpoint.replace('wuton', 'netD'))
+        train_wuton(opt, train_loader, model_wuton, netD, board)
         save_checkpoint(model_wuton, os.path.join(opt.checkpoint_dir, opt.name, 'wuton_final.pth'))
+        save_checkpoint(netD, os.path.join(opt.checkpoint_dir, opt.name, 'netD_final.pth'))
 
         # raise NotImplementedError('Model [%s] is not implemented' % opt.stage)
         
