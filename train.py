@@ -244,10 +244,9 @@ def main():
         train_tom(opt, train_loader, model, board)
         save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'tom_final.pth'))
     else:
-        # model_gmm = GMM(opt)
-        # model_tom = UnetGenerator(3, 3, 5, ngf=16, norm_layer=nn.InstanceNorm2d)
         model_wuton = WUTON(opt, 3, 3, 5, ngf=16, norm_layer=nn.InstanceNorm2d)
-        # train_wuton(opt, train_loader, model_gmm, model_tom, board)
+        if not opt.checkpoint =='' and os.path.exists(opt.checkpoint):
+            load_checkpoint(model_wuton, opt.checkpoint)
         train_wuton(opt, train_loader, model_wuton, board)
         save_checkpoint(model_wuton, os.path.join(opt.checkpoint_dir, opt.name, 'wuton_final.pth'))
 

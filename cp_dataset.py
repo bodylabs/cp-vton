@@ -120,7 +120,7 @@ class CPDataset(data.Dataset):
         parse_name = im_name.replace('.jpg', '.png')
         im_parse = Image.open(osp.join(self.data_path, 'image-parse', parse_name))
         parse_array = np.array(im_parse)
-        if len(np.array(im_parse).shape)==3:
+        if len(parse_array.shape)==3:
             parse_array = parse_array[:,:,0]
         parse_shape = (parse_array > 0).astype(np.float32)
         parse_head = (parse_array == 1).astype(np.float32) + \
