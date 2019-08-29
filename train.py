@@ -247,6 +247,7 @@ def main():
         model_wuton = WUTON(opt, 3, 3, 5, ngf=16, norm_layer=nn.InstanceNorm2d)
         netD = define_D(3, 64, 'n_layers', 5, norm='batch', init_type='normal', gpu_ids=[0])
         if not opt.checkpoint =='' and os.path.exists(opt.checkpoint):
+            print('using loaded model')
             load_checkpoint(model_wuton, opt.checkpoint)
             load_checkpoint(netD, opt.checkpoint.replace('wuton', 'netD'))
         train_wuton(opt, train_loader, model_wuton, netD, board)
