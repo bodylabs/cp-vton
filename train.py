@@ -76,7 +76,7 @@ def compute_gradient_penalty(D, real_samples, fake_samples):
     return gradient_penalty
 
 ############### need to modify the cp_dataset.py before using
-def train_wuton(opt, train_loader, model_wuton, board, netD):
+def train_wuton(opt, train_loader, model_wuton, netD, board):
     # model_gmm.cuda()
     # model_gmm.train()
 
