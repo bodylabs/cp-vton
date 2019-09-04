@@ -172,7 +172,7 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
             outputs, grid, theta = model_wuton(c, dilated_upper_wuton)
             warped_cloth = F.grid_sample(c, grid, padding_mode='border')
             warped_grid = F.grid_sample(im_g, grid, padding_mode='zeros')
-            outputs = F.tanh(outputs)
+            # outputs = F.tanh(outputs)
 
             # Generator loss (You may want to resample again from real and fake data)
             optimizer_G.zero_grad()
