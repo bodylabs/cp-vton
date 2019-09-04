@@ -189,7 +189,7 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
             relativistic_loss_g = BCE_stable(y_pred_fake_G - y_pred_G, y)
             loss_g = relativistic_loss_g + loss_warp_l1 + loss_l1 + loss_vgg
 
-            visuals = [[c, (warped_grid*0.1+warped_cloth*0.9), im_c], 
+            visuals = [[c, warped_cloth, im_c], 
                        [dilated_upper_wuton, outputs, im]]
 
 
