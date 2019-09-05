@@ -177,7 +177,7 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
             # Generator loss (You may want to resample again from real and fake data)
             optimizer_G.zero_grad()
             loss_warp_l1 = criterionL1(warped_cloth, im_c)    
-            loss_l1 = 10*criterionL1(outputs, im)
+            loss_l1 = criterionL1(outputs, im)
             loss_vgg = criterionVGG(outputs, im)
 
 
