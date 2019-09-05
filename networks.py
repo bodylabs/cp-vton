@@ -405,27 +405,27 @@ class UnetSkipConnectionBlock(nn.Module):
             return up_result
         else:
             if self.innermost:
-                xb,xc,xh,xw = input_c.size()
-                grid_function = TpsGridGen(xh, xw, use_cuda=True, grid_size=5)
-                grid = grid_function(theta)
-                warped_c = F.grid_sample(input_c, grid, padding_mode='border')
+                # xb,xc,xh,xw = input_c.size()
+                # grid_function = TpsGridGen(xh, xw, use_cuda=True, grid_size=5)
+                # grid = grid_function(theta)
+                # warped_c = F.grid_sample(input_c, grid, padding_mode='border')
 
                 down_result_c = self.down(input_c)
                 down_result_ap = self.down_2(input_ap)
                 concatenate_result = torch.cat((down_result_c, down_result_ap),1)
                 up_result = self.up(concatenate_result)
-                return torch.cat([warped_c, input_ap, up_result], 1)
+                return torch.cat([input_c, input_ap, up_result], 1)
             else:
-                xb,xc,xh,xw = input_c.size()
-                grid_function = TpsGridGen(xh, xw, use_cuda=True, grid_size=5)
-                grid = grid_function(theta)
-                warped_c = F.grid_sample(input_c, grid, padding_mode='border')
+                # xb,xc,xh,xw = input_c.size()
+                # grid_function = TpsGridGen(xh, xw, use_cuda=True, grid_size=5)
+                # grid = grid_function(theta)
+                # warped_c = F.grid_sample(input_c, grid, padding_mode='border')
 
                 down_result_c = self.down(input_c)
                 down_result_ap = self.down_2(input_ap)
                 submodule_result = self.submodule(down_result_c, down_result_ap, theta)
                 up_result = self.up(submodule_result)
-                return torch.cat([warped_c, input_ap, up_result], 1)
+                return torch.cat([input_c, input_ap, up_result], 1)
 
 
 
@@ -514,7 +514,8 @@ class WUTON(nn.Module):
         
     def forward(self, c, dilated_upper_wuton):
         grid, theta = self.gmm(c, dilated_upper_wuton)
-        return self.tom(c, dilated_upper_wuton, theta), grid, theta
+        warped_cloth = F.grid_sample(c, grid, padding_mode='border')
+        return self.tom(warped_cloth, dilated_upper_wuton, theta), grid, theta
 
 
 def save_checkpoint(model, save_path):
