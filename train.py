@@ -124,19 +124,23 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
 
         
         ########unpaired
-        outputs_unpaired, grid_unpaired, theta_unpaired = model_wuton(c_unpaired, dilated_upper_wuton)
-        outputs_unpaired = F.tanh(outputs_unpaired)
+        # outputs_unpaired, grid_unpaired, theta_unpaired = model_wuton(c_unpaired, dilated_upper_wuton)
+        # outputs_unpaired = F.tanh(outputs_unpaired)
 
 
-        y = torch.ones(outputs_unpaired.size()[0], 1, 6, 4).to(device) ########all 1
+        outputs, grid, theta = model_wuton(c, dilated_upper_wuton)
+        outputs = F.tanh(outputs)
+
+
+        y = torch.ones(c.size()[0], 1, 6, 4).to(device) ########all 1
 
 
         # Discriminator loss
         optimizer_D.zero_grad()
         y_pred = netD(im)
-        y_pred_fake_D = netD(outputs_unpaired.detach()) # discriminator        
+        y_pred_fake_D = netD(outputs.detach()) # discriminator        
 
-        gradient_penalty = compute_gradient_penalty(netD, im.data.to(device), outputs_unpaired.data.to(device))
+        gradient_penalty = compute_gradient_penalty(netD, im.data.to(device), outputs.data.to(device))
         relativistic_loss_d = BCE_stable(y_pred - y_pred_fake_D, y)
         loss_d = relativistic_loss_d + lambda_gp * gradient_penalty
         loss_d.backward()
@@ -181,17 +185,16 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
             loss_vgg = criterionVGG(outputs, im)
 
 
-            outputs_unpaired_g, grid_unpaired, theta_unpaired = model_wuton(c_unpaired, dilated_upper_wuton)
-            unpaired_warped_cloth = F.grid_sample(c_unpaired, grid_unpaired, padding_mode='border')
-            outputs_unpaired_g = F.tanh(outputs_unpaired_g)
+            # outputs_unpaired_g, grid_unpaired, theta_unpaired = model_wuton(c_unpaired, dilated_upper_wuton)
+            # unpaired_warped_cloth = F.grid_sample(c_unpaired, grid_unpaired, padding_mode='border')
+            # outputs_unpaired_g = F.tanh(outputs_unpaired_g)
             y_pred_G = netD(im)
-            y_pred_fake_G = netD(outputs_unpaired_g) # generator
+            y_pred_fake_G = netD(outputs) # generator
             relativistic_loss_g = BCE_stable(y_pred_fake_G - y_pred_G, y)
             loss_g = relativistic_loss_g + loss_warp_l1 + loss_l1 + loss_vgg
 
             visuals = [[c, warped_cloth, im_c], 
-                       [dilated_upper_wuton, outputs, im],
-                       [dilated_upper_wuton, unpaired_warped_cloth, outputs_unpaired_g]]
+                       [dilated_upper_wuton, outputs, im]]
 
 
 
