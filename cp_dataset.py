@@ -155,7 +155,7 @@ class CPDataset(data.Dataset):
         # upper cloth
         im_c = im * pcm + (1 - pcm) # [-1,1], fill 1 for other parts
         im_h = im * phead - (1 - phead) # [-1,1], fill 0 for other parts
-        im_dilated = im * (1-dilated_mask)
+        im_dilated = im * (1-dilated_mask) - dilated_mask
 
         # load pose points
         pose_name = im_name.replace('.jpg', '_keypoints.json')
