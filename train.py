@@ -131,7 +131,7 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
         # y_pred_G = netD(im)
         # y_pred_fake_G = netD(outputs) # generator
         # relativistic_loss_g = BCE_stable(y_pred_fake_G - y_pred_G, y)
-        loss_g =  loss_l1 + loss_vgg
+        loss_g =  loss_l1
 
         visuals = [[outputs, im]]
 
@@ -148,11 +148,11 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
             # board.add_scalar('relativistic_loss_g', relativistic_loss_g.item(), step+1)
             # board.add_scalar('warp_L1', loss_warp_l1.item(), step+1)
             board.add_scalar('final_L1', loss_l1.item(), step+1)
-            board.add_scalar('VGG', loss_vgg.item(), step+1)
+            # board.add_scalar('VGG', loss_vgg.item(), step+1)
             t = time.time() - iter_start_time
-            print('generator step: %8d, time: %.3f, loss_g: %.4f, final_l1: %.4f, vgg: %.4f' 
+            print('generator step: %8d, time: %.3f, loss_g: %.4f, final_l1: %.4f' 
                     % (step+1, t, loss_g.item(), 
-                    loss_l1.item(), loss_vgg.item()), flush=True)
+                    loss_l1.item()), flush=True)
 
         # if (step+1) % opt.save_count == 0:
         #     save_checkpoint(model_wuton, os.path.join(opt.checkpoint_dir, opt.name, 'wuton_step_%06d.pth' % (step+1)))
