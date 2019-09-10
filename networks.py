@@ -346,7 +346,7 @@ class UnetSkipConnectionBlock(nn.Module):
 
         if outermost:
             standard_upconv = [nn.ReLU(True), nn.Conv2d(inner_nc*2, inner_nc*2, kernel_size=3, stride=1, padding=1), norm_layer(inner_nc*3)]
-            upconv = nn.ConvTranspose2d(inner_nc*3, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
+            upconv = nn.ConvTranspose2d(inner_nc*2, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
             
             down = standard_downconv + [downconv, downrelu, downnorm]
             up = standard_upconv + [uprelu, upconv, upnorm]
@@ -357,7 +357,7 @@ class UnetSkipConnectionBlock(nn.Module):
             self.submodule = submodule
         elif innermost:
             standard_upconv = [nn.ReLU(True), nn.Conv2d(inner_nc, inner_nc, kernel_size=3, stride=1, padding=1), norm_layer(inner_nc*3)]
-            upconv = nn.ConvTranspose2d(inner_nc*2, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
+            upconv = nn.ConvTranspose2d(inner_nc, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
             
             down = standard_downconv + [downconv, downrelu, downnorm]
             up = standard_upconv + [uprelu, upconv, upnorm]
@@ -367,7 +367,7 @@ class UnetSkipConnectionBlock(nn.Module):
             self.up = nn.Sequential(*up)
         else:
             standard_upconv = [nn.ReLU(True), nn.Conv2d(inner_nc*2, inner_nc*2, kernel_size=3, stride=1, padding=1), norm_layer(inner_nc*3)]
-            upconv = nn.ConvTranspose2d(inner_nc*3, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
+            upconv = nn.ConvTranspose2d(inner_nc*2, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
             
             down = standard_downconv + [downconv, downrelu, downnorm]
             up = standard_upconv + [uprelu, upconv, upnorm]
