@@ -124,19 +124,19 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
 
         
         ########unpaired
-        outputs_unpaired, grid_unpaired, theta_unpaired = model_wuton(c_unpaired, dilated_upper_wuton)
-        outputs_unpaired = F.tanh(outputs_unpaired)
+        outputs, grid, theta = model_wuton(c, im)
+        outputs = F.tanh(outputs)
 
 
-        y = torch.ones(outputs_unpaired.size()[0], 1, 6, 4).to(device) ########all 1
+        y = torch.ones(outputs.size()[0], 1, 6, 4).to(device) ########all 1
 
 
         # Discriminator loss
         optimizer_D.zero_grad()
         y_pred = netD(im)
-        y_pred_fake_D = netD(outputs_unpaired.detach()) # discriminator        
+        y_pred_fake_D = netD(outputs.detach()) # discriminator        
 
-        gradient_penalty = compute_gradient_penalty(netD, im.data.to(device), outputs_unpaired.data.to(device))
+        gradient_penalty = compute_gradient_penalty(netD, im.data.to(device), outputs.data.to(device))
         relativistic_loss_d = BCE_stable(y_pred - y_pred_fake_D, y)
         loss_d = relativistic_loss_d + lambda_gp * gradient_penalty
         loss_d.backward()
@@ -151,8 +151,8 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
             print('discriminator step: %8d, time: %.3f, loss_d: %.4f, relativistic_loss_d: %.4f' 
                     % (step+1, t, loss_d.item(), relativistic_loss_d.item()), flush=True)
 
-        if (step+1) % opt.save_count == 0:
-            save_checkpoint(netD, os.path.join(opt.checkpoint_dir, opt.name, 'netD_step_%06d.pth' % (step+1)))
+        # if (step+1) % opt.save_count == 0:
+        #     save_checkpoint(netD, os.path.join(opt.checkpoint_dir, opt.name, 'netD_step_%06d.pth' % (step+1)))
 
 
 
@@ -169,27 +169,26 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
 
 
             #########paired
-            outputs, grid, theta = model_wuton(c, dilated_upper_wuton)
+            outputs, grid, theta = model_wuton(c, im)
             warped_cloth = F.grid_sample(c, grid, padding_mode='border')
             warped_grid = F.grid_sample(im_g, grid, padding_mode='zeros')
             outputs = F.tanh(outputs)
 
             # Generator loss (You may want to resample again from real and fake data)
             optimizer_G.zero_grad()
-            loss_warp_l1 = criterionL1(warped_cloth, im_c)    
+            # loss_warp_l1 = criterionL1(warped_cloth, im_c)    
             loss_l1 = criterionL1(outputs, im)
             loss_vgg = criterionVGG(outputs, im)
 
 
-            outputs_unpaired_g, grid_unpaired, theta_unpaired = model_wuton(c_unpaired, dilated_upper_wuton)
-            outputs_unpaired_g = F.tanh(outputs_unpaired_g)
+            # outputs_unpaired_g, grid_unpaired, theta_unpaired = model_wuton(c_unpaired, dilated_upper_wuton)
+            # outputs_unpaired_g = F.tanh(outputs_unpaired_g)
             y_pred_G = netD(im)
-            y_pred_fake_G = netD(outputs_unpaired_g) # generator
+            y_pred_fake_G = netD(outputs) # generator
             relativistic_loss_g = BCE_stable(y_pred_fake_G - y_pred_G, y)
-            loss_g = relativistic_loss_g + loss_warp_l1 + loss_l1 + loss_vgg
+            loss_g = relativistic_loss_g  + loss_l1 + loss_vgg
 
-            visuals = [[c, warped_cloth, im_c], 
-                       [dilated_upper_wuton, outputs, im]]
+            visuals = [[outputs, im]]
 
 
 
@@ -202,16 +201,16 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
                 board_add_images(board, 'combine', visuals, step+1)
                 board.add_scalar('metric_g', loss_g.item(), step+1)
                 board.add_scalar('relativistic_loss_g', relativistic_loss_g.item(), step+1)
-                board.add_scalar('warp_L1', loss_warp_l1.item(), step+1)
+                # board.add_scalar('warp_L1', loss_warp_l1.item(), step+1)
                 board.add_scalar('final_L1', loss_l1.item(), step+1)
                 board.add_scalar('VGG', loss_vgg.item(), step+1)
                 t = time.time() - iter_start_time
-                print('generator step: %8d, time: %.3f, loss_g: %.4f, warp_l1: %.4f, final_l1: %.4f, vgg: %.4f, relativistic_loss_g: %.4f' 
+                print('generator step: %8d, time: %.3f, loss_g: %.4f, final_l1: %.4f, vgg: %.4f, relativistic_loss_g: %.4f' 
                         % (step+1, t, loss_g.item(), 
                         loss_warp_l1.item(), loss_l1.item(), loss_vgg.item(), relativistic_loss_g.item()), flush=True)
 
-            if (step+1) % opt.save_count == 0:
-                save_checkpoint(model_wuton, os.path.join(opt.checkpoint_dir, opt.name, 'wuton_step_%06d.pth' % (step+1)))
+            # if (step+1) % opt.save_count == 0:
+            #     save_checkpoint(model_wuton, os.path.join(opt.checkpoint_dir, opt.name, 'wuton_step_%06d.pth' % (step+1)))
 
 def main():
     opt = get_opt()

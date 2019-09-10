@@ -345,7 +345,7 @@ class UnetSkipConnectionBlock(nn.Module):
         upnorm = norm_layer(outer_nc)
 
         if outermost:
-            standard_upconv = [nn.ReLU(True), nn.Conv2d(inner_nc*3, inner_nc*3, kernel_size=3, stride=1, padding=1), norm_layer(inner_nc*3)]
+            standard_upconv = [nn.ReLU(True), nn.Conv2d(inner_nc*2, inner_nc*2, kernel_size=3, stride=1, padding=1), norm_layer(inner_nc*3)]
             upconv = nn.ConvTranspose2d(inner_nc*3, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
             
             down = standard_downconv + [downconv, downrelu, downnorm]
@@ -356,7 +356,7 @@ class UnetSkipConnectionBlock(nn.Module):
             self.up = nn.Sequential(*up)
             self.submodule = submodule
         elif innermost:
-            standard_upconv = [nn.ReLU(True), nn.Conv2d(inner_nc*2, inner_nc*2, kernel_size=3, stride=1, padding=1), norm_layer(inner_nc*3)]
+            standard_upconv = [nn.ReLU(True), nn.Conv2d(inner_nc, inner_nc, kernel_size=3, stride=1, padding=1), norm_layer(inner_nc*3)]
             upconv = nn.ConvTranspose2d(inner_nc*2, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
             
             down = standard_downconv + [downconv, downrelu, downnorm]
@@ -366,7 +366,7 @@ class UnetSkipConnectionBlock(nn.Module):
             self.down = nn.Sequential(*down)
             self.up = nn.Sequential(*up)
         else:
-            standard_upconv = [nn.ReLU(True), nn.Conv2d(inner_nc*3, inner_nc*3, kernel_size=3, stride=1, padding=1), norm_layer(inner_nc*3)]
+            standard_upconv = [nn.ReLU(True), nn.Conv2d(inner_nc*2, inner_nc*2, kernel_size=3, stride=1, padding=1), norm_layer(inner_nc*3)]
             upconv = nn.ConvTranspose2d(inner_nc*3, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
             
             down = standard_downconv + [downconv, downrelu, downnorm]
@@ -412,9 +412,9 @@ class UnetSkipConnectionBlock(nn.Module):
 
                 down_result_c = self.down(input_c)
                 down_result_ap = self.down_2(input_ap)
-                concatenate_result = torch.cat((down_result_c, down_result_ap),1)
-                up_result = self.up(concatenate_result)
-                return torch.cat([warped_c, input_ap, up_result], 1)
+                # concatenate_result = torch.cat((down_result_c, down_result_ap),1)
+                up_result = self.up(down_result_ap)
+                return torch.cat([input_ap, up_result], 1)
             else:
                 xb,xc,xh,xw = input_c.size()
                 grid_function = TpsGridGen(xh, xw, use_cuda=True, grid_size=5)
@@ -425,7 +425,7 @@ class UnetSkipConnectionBlock(nn.Module):
                 down_result_ap = self.down_2(input_ap)
                 submodule_result = self.submodule(down_result_c, down_result_ap, theta)
                 up_result = self.up(submodule_result)
-                return torch.cat([warped_c, input_ap, up_result], 1)
+                return torch.cat([input_ap, up_result], 1)
 
 
 
