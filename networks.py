@@ -349,7 +349,7 @@ class UnetSkipConnectionBlock(nn.Module):
             upconv = nn.ConvTranspose2d(inner_nc*3, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
             
             down = standard_downconv + [downconv, downrelu, downnorm]
-            up = standard_upconv + [upconv, uprelu, upnorm]
+            up = [nn.Conv2d(inner_nc*3, inner_nc*3, kernel_size=3, stride=1, padding=1), upconv]
 
             # model = down + [submodule] + up
             self.down = nn.Sequential(*down)

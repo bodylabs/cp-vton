@@ -156,7 +156,7 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
 
 
 
-        if (step+1) % 5 == 0:
+        if (step+1) % 1 == 0:
 
             # ---------------------
             #  Train generator
@@ -182,6 +182,7 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
 
 
             outputs_unpaired_g, grid_unpaired, theta_unpaired = model_wuton(c_unpaired, dilated_upper_wuton)
+            warped_cloth_unpaired = F.grid_sample(c_unpaired, grid_unpaired, padding_mode='border')
             outputs_unpaired_g = F.tanh(outputs_unpaired_g)
             y_pred_G = netD(im)
             y_pred_fake_G = netD(outputs_unpaired_g) # generator
@@ -189,7 +190,8 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
             loss_g = relativistic_loss_g + loss_warp_l1 + loss_l1 + loss_vgg
 
             visuals = [[c, warped_cloth, im_c], 
-                       [dilated_upper_wuton, outputs, im]]
+                       [dilated_upper_wuton, outputs, im],
+                       [c_unpaired, warped_cloth_unpaired, outputs_unpaired_g]]
 
 
 
