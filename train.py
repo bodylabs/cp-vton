@@ -114,7 +114,7 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
 
 
         #########paired
-        outputs, grid, theta = model_wuton(c, dilated_upper_wuton)
+        outputs, grid, theta = model_wuton(c, im)
         # warped_cloth = F.grid_sample(c, grid, padding_mode='border')
         # warped_grid = F.grid_sample(im_g, grid, padding_mode='zeros')
         outputs = F.tanh(outputs)
