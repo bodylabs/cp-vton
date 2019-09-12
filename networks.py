@@ -298,143 +298,17 @@ class TpsGridGen(nn.Module):
         
         return torch.cat((points_X_prime,points_Y_prime),3)
         
-# # # Defines the Unet generator.
-# # # |num_downs|: number of downsamplings in UNet. For example,
-# # # if |num_downs| == 7, image of size 128x128 will become of size 1x1
-# # # at the bottleneck
-# class UnetGenerator(nn.Module):
-#     def __init__(self, input_nc=3, output_nc=3, num_downs=5, ngf=16,
-#                  norm_layer=nn.BatchNorm2d, use_dropout=False):
-#         super(UnetGenerator, self).__init__()
-
-#         # construct unet structure
-#         unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 16, input_nc=None, submodule=None, norm_layer=norm_layer, innermost=True)
-#         unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
-#         unet_block = UnetSkipConnectionBlock(ngf * 2, ngf * 4, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
-#         unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
-#         unet_block = UnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block, outermost=True, norm_layer=norm_layer)
-
-#         self.model = unet_block
-
-#     def forward(self, input_c, input_ap, theta):
-#         return self.model(input_c, input_ap, theta)
-
-
-# # Defines the submodule with skip connection.
-# # X -------------------identity---------------------- X
-# #   |-- downsampling -- |submodule| -- upsampling --|
-# class UnetSkipConnectionBlock(nn.Module):
-#     def __init__(self, outer_nc, inner_nc, input_nc=None,
-#                  submodule=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False):
-#         super(UnetSkipConnectionBlock, self).__init__()
-
-#         self.outermost = outermost
-#         self.innermost = innermost
-#         use_bias = norm_layer == nn.InstanceNorm2d
-
-#         if input_nc is None:
-#             input_nc = outer_nc
-
-#         ################# cloth image encoder and decoder
-#         standard_downconv = [nn.Conv2d(input_nc, input_nc, kernel_size=3, stride=1, padding=1), nn.ReLU(True), norm_layer(input_nc)]
-#         downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
-#         downrelu = nn.ReLU(True)
-#         downnorm = norm_layer(inner_nc)
-
-#         uprelu = nn.ReLU(True)
-#         upnorm = norm_layer(outer_nc)
-
-#         if outermost:
-#             standard_upconv = [nn.ReLU(True), nn.Conv2d(inner_nc*2, inner_nc*2, kernel_size=3, stride=1, padding=1), norm_layer(inner_nc*3)]
-#             upconv = nn.ConvTranspose2d(inner_nc*2, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
-            
-#             down = standard_downconv + [downconv, downrelu, downnorm]
-#             up = standard_upconv + [uprelu, upconv, upnorm]
-
-#             # model = down + [submodule] + up
-#             self.down = nn.Sequential(*down)
-#             self.up = nn.Sequential(*up)
-#             self.submodule = submodule
-#         elif innermost:
-#             standard_upconv = [nn.ReLU(True), nn.Conv2d(inner_nc, inner_nc, kernel_size=3, stride=1, padding=1), norm_layer(inner_nc*3)]
-#             upconv = nn.ConvTranspose2d(inner_nc, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
-            
-#             down = standard_downconv + [downconv, downrelu, downnorm]
-#             up = standard_upconv + [uprelu, upconv, upnorm]
-
-#            #model = down + up
-#             self.down = nn.Sequential(*down)
-#             self.up = nn.Sequential(*up)
-#         else:
-#             standard_upconv = [nn.ReLU(True), nn.Conv2d(inner_nc*2, inner_nc*2, kernel_size=3, stride=1, padding=1), norm_layer(inner_nc*3)]
-#             upconv = nn.ConvTranspose2d(inner_nc*2, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
-            
-#             down = standard_downconv + [downconv, downrelu, downnorm]
-#             up = standard_upconv + [uprelu, upconv, upnorm]
-
-
-#             if use_dropout:
-#                 up = up + [nn.Dropout(0.5)]
-#             else:
-#                 up = up
-#             self.down = nn.Sequential(*down)
-#             self.up = nn.Sequential(*up)
-#             self.submodule = submodule
-
-
-#         ################# ap image encoder 
-#         standard_downconv_2 = [nn.Conv2d(input_nc, input_nc, kernel_size=3, stride=1, padding=1), nn.ReLU(True), norm_layer(input_nc)]
-#         downconv_2 = nn.Conv2d(input_nc, inner_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
-#         downrelu_2 = nn.ReLU(True)
-#         downnorm_2 = norm_layer(inner_nc)
-
-#         # uprelu_2 = nn.ReLU(True)
-#         # upnorm_2 = norm_layer(outer_nc)
-
-#         down_2 = standard_downconv_2 + [downconv_2, downrelu_2, downnorm_2]
-#         self.down_2 = nn.Sequential(*down_2)
-
-
-#     def forward(self, input_c, input_ap, theta):
-
-#         if self.outermost:
-#             down_result_c = self.down(input_c)
-#             down_result_ap = self.down_2(input_ap)
-#             submodule_result = self.submodule(down_result_c, down_result_ap, theta)
-#             up_result = self.up(submodule_result)
-#             return up_result
-#         else:
-#             if self.innermost:
-#                 xb,xc,xh,xw = input_c.size()
-#                 grid_function = TpsGridGen(xh, xw, use_cuda=True, grid_size=5)
-#                 grid = grid_function(theta)
-#                 warped_c = F.grid_sample(input_c, grid, padding_mode='border')
-
-#                 down_result_c = self.down(input_c)
-#                 down_result_ap = self.down_2(input_ap)
-#                 # concatenate_result = torch.cat((down_result_c, down_result_ap),1)
-#                 up_result = self.up(down_result_ap)
-#                 return torch.cat([input_ap, up_result], 1)
-#             else:
-#                 xb,xc,xh,xw = input_c.size()
-#                 grid_function = TpsGridGen(xh, xw, use_cuda=True, grid_size=5)
-#                 grid = grid_function(theta)
-#                 warped_c = F.grid_sample(input_c, grid, padding_mode='border')
-
-#                 down_result_c = self.down(input_c)
-#                 down_result_ap = self.down_2(input_ap)
-#                 submodule_result = self.submodule(down_result_c, down_result_ap, theta)
-#                 up_result = self.up(submodule_result)
-#                 return torch.cat([input_ap, up_result], 1)
-
+# # Defines the Unet generator.
+# # |num_downs|: number of downsamplings in UNet. For example,
+# # if |num_downs| == 7, image of size 128x128 will become of size 1x1
+# # at the bottleneck
 class UnetGenerator(nn.Module):
-    def __init__(self, input_nc, output_nc, num_downs, ngf=64,
+    def __init__(self, input_nc=3, output_nc=3, num_downs=5, ngf=16,
                  norm_layer=nn.BatchNorm2d, use_dropout=False):
         super(UnetGenerator, self).__init__()
+
         # construct unet structure
-        unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer, innermost=True)
-        for i in range(num_downs - 5):
-            unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer, use_dropout=use_dropout)
+        unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 16, input_nc=None, submodule=None, norm_layer=norm_layer, innermost=True)
         unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
         unet_block = UnetSkipConnectionBlock(ngf * 2, ngf * 4, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
         unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
@@ -442,8 +316,8 @@ class UnetGenerator(nn.Module):
 
         self.model = unet_block
 
-    def forward(self, input):
-        return self.model(input)
+    def forward(self, input_c, input_ap, theta):
+        return self.model(input_c, input_ap, theta)
 
 
 # Defines the submodule with skip connection.
@@ -453,48 +327,106 @@ class UnetSkipConnectionBlock(nn.Module):
     def __init__(self, outer_nc, inner_nc, input_nc=None,
                  submodule=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False):
         super(UnetSkipConnectionBlock, self).__init__()
+
         self.outermost = outermost
+        self.innermost = innermost
         use_bias = norm_layer == nn.InstanceNorm2d
 
         if input_nc is None:
             input_nc = outer_nc
-        downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
-                             stride=2, padding=1, bias=use_bias)
-        downrelu = nn.LeakyReLU(0.2, True)
+
+        ################# cloth image encoder and decoder
+        standard_downconv = [nn.Conv2d(input_nc, input_nc, kernel_size=3, stride=1, padding=1), nn.ReLU(True), norm_layer(input_nc)]
+        downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
+        downrelu = nn.ReLU(True)
         downnorm = norm_layer(inner_nc)
+
         uprelu = nn.ReLU(True)
         upnorm = norm_layer(outer_nc)
 
         if outermost:
-            upsample = nn.Upsample(scale_factor=2, mode='bilinear')
-            upconv = nn.Conv2d(inner_nc * 2, outer_nc, kernel_size=3, stride=1, padding=1, bias=use_bias)
-            down = [downconv]
-            up = [uprelu, upsample, upconv, upnorm]
-            model = down + [submodule] + up
+            standard_upconv = [nn.ReLU(True), nn.Conv2d(inner_nc*2, inner_nc*2, kernel_size=3, stride=1, padding=1), norm_layer(inner_nc*3)]
+            upconv = nn.ConvTranspose2d(inner_nc*2, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
+            
+            down = standard_downconv + [downconv, downrelu, downnorm]
+            up = [nn.Conv2d(inner_nc*2, inner_nc*2, kernel_size=3, stride=1, padding=1), upconv]
+
+            # model = down + [submodule] + up
+            self.down = nn.Sequential(*down)
+            self.up = nn.Sequential(*up)
+            self.submodule = submodule
         elif innermost:
-            upsample = nn.Upsample(scale_factor=2, mode='bilinear')
-            upconv = nn.Conv2d(inner_nc, outer_nc, kernel_size=3, stride=1, padding=1, bias=use_bias)
-            down = [downrelu, downconv]
-            up = [uprelu, upsample, upconv, upnorm]
-            model = down + up
+            standard_upconv = [nn.ReLU(True), nn.Conv2d(inner_nc, inner_nc, kernel_size=3, stride=1, padding=1), norm_layer(inner_nc*3)]
+            upconv = nn.ConvTranspose2d(inner_nc, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
+            
+            down = standard_downconv + [downconv, downrelu, downnorm]
+            up = standard_upconv + [uprelu, upconv, upnorm]
+
+           #model = down + up
+            self.down = nn.Sequential(*down)
+            self.up = nn.Sequential(*up)
         else:
-            upsample = nn.Upsample(scale_factor=2, mode='bilinear')
-            upconv = nn.Conv2d(inner_nc*2, outer_nc, kernel_size=3, stride=1, padding=1, bias=use_bias)
-            down = [downrelu, downconv, downnorm]
-            up = [uprelu, upsample, upconv, upnorm]
+            standard_upconv = [nn.ReLU(True), nn.Conv2d(inner_nc*2, inner_nc*2, kernel_size=3, stride=1, padding=1), norm_layer(inner_nc*3)]
+            upconv = nn.ConvTranspose2d(inner_nc*2, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
+            
+            down = standard_downconv + [downconv, downrelu, downnorm]
+            up = standard_upconv + [uprelu, upconv, upnorm]
+
 
             if use_dropout:
-                model = down + [submodule] + up + [nn.Dropout(0.5)]
+                up = up + [nn.Dropout(0.5)]
             else:
-                model = down + [submodule] + up
+                up = up
+            self.down = nn.Sequential(*down)
+            self.up = nn.Sequential(*up)
+            self.submodule = submodule
 
-        self.model = nn.Sequential(*model)
 
-    def forward(self, x):
+        ################# ap image encoder 
+        standard_downconv_2 = [nn.Conv2d(input_nc, input_nc, kernel_size=3, stride=1, padding=1), nn.ReLU(True), norm_layer(input_nc)]
+        downconv_2 = nn.Conv2d(input_nc, inner_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
+        downrelu_2 = nn.ReLU(True)
+        downnorm_2 = norm_layer(inner_nc)
+
+        # uprelu_2 = nn.ReLU(True)
+        # upnorm_2 = norm_layer(outer_nc)
+
+        down_2 = standard_downconv_2 + [downconv_2, downrelu_2, downnorm_2]
+        self.down_2 = nn.Sequential(*down_2)
+
+
+    def forward(self, input_c, input_ap, theta):
+
         if self.outermost:
-            return self.model(x)
+            down_result_c = self.down(input_c)
+            down_result_ap = self.down_2(input_ap)
+            submodule_result = self.submodule(down_result_c, down_result_ap, theta)
+            up_result = self.up(submodule_result)
+            return up_result
         else:
-            return torch.cat([x, self.model(x)], 1)
+            if self.innermost:
+                xb,xc,xh,xw = input_c.size()
+                grid_function = TpsGridGen(xh, xw, use_cuda=True, grid_size=5)
+                grid = grid_function(theta)
+                warped_c = F.grid_sample(input_c, grid, padding_mode='border')
+
+                down_result_c = self.down(input_c)
+                down_result_ap = self.down_2(input_ap)
+                # concatenate_result = torch.cat((down_result_c, down_result_ap),1)
+                up_result = self.up(down_result_ap)
+                return torch.cat([input_ap, up_result], 1)
+            else:
+                xb,xc,xh,xw = input_c.size()
+                grid_function = TpsGridGen(xh, xw, use_cuda=True, grid_size=5)
+                grid = grid_function(theta)
+                warped_c = F.grid_sample(input_c, grid, padding_mode='border')
+
+                down_result_c = self.down(input_c)
+                down_result_ap = self.down_2(input_ap)
+                submodule_result = self.submodule(down_result_c, down_result_ap, theta)
+                up_result = self.up(submodule_result)
+                return torch.cat([input_ap, up_result], 1)
+
 
 
 class Vgg19(nn.Module):
