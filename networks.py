@@ -514,7 +514,7 @@ class WUTON(nn.Module):
         
     def forward(self, c, dilated_upper_wuton):
         grid, theta = self.gmm(c, dilated_upper_wuton)
-        return self.tom(dilated_upper_wuton), grid, theta
+        return self.tom(c, dilated_upper_wuton, theta), grid, theta
 
 
 def save_checkpoint(model, save_path):
