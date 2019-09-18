@@ -250,7 +250,7 @@ def main():
         if not opt.checkpoint =='' and os.path.exists(opt.checkpoint):
             print('using loaded model')
             load_checkpoint(model_wuton, opt.checkpoint)
-            load_checkpoint(netD, opt.checkpoint.replace('wuton', 'netD'))
+            load_checkpoint(netD, opt.checkpoint.replace('wuton_final', 'netD_final'))
         train_wuton(opt, train_loader, model_wuton, netD, board)
         save_checkpoint(model_wuton, os.path.join(opt.checkpoint_dir, opt.name, 'wuton_final.pth'))
         save_checkpoint(netD, os.path.join(opt.checkpoint_dir, opt.name, 'netD_final.pth'))

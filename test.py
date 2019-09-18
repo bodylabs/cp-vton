@@ -127,12 +127,12 @@ def test_tom(opt, test_loader, model, board):
             t = time.time() - iter_start_time
             print('step: %8d, time: %.3f' % (step+1, t), flush=True)
 
-def test_wuton(opt, test_loader, model_gmm, model_tom, board):
-    model_gmm.cuda()
-    model_gmm.train()
 
-    model_tom.cuda()
-    model_tom.train()
+
+
+def test_wuton(opt, train_loader, model_wuton, board):
+    model_wuton.cuda()
+    model_wuton.train()
     
     base_name = os.path.basename(opt.checkpoint)
     save_dir = os.path.join(opt.result_dir, base_name, opt.datamode)
@@ -144,25 +144,23 @@ def test_wuton(opt, test_loader, model_gmm, model_tom, board):
     print('Dataset size: %05d!' % (len(test_loader.dataset)), flush=True)
     for step, inputs in enumerate(test_loader.data_loader):
         iter_start_time = time.time()
-        
-        im_names = inputs['im_name']
-
+        inputs = train_loader.next_batch()
+            
         im = inputs['image'].cuda()
+        # im_g = inputs['grid_image'].cuda()
         c = inputs['cloth'].cuda()
         # c_unpaired = inputs['c_unpaired'].cuda()
         dilated_upper_wuton = inputs['dilated_upper_wuton'].cuda()
         im_c =  inputs['parse_cloth'].cuda()
 
 
-        grid, theta = model_gmm(c, dilated_upper_wuton)
-        outputs = model_tom(c, dilated_upper_wuton, theta)
+        outputs, grid, theta = model_wuton(c, dilated_upper_wuton)
+        warped_cloth = F.grid_sample(c, grid, padding_mode='border')
+        # warped_grid = F.grid_sample(im_g, grid, padding_mode='zeros')
         outputs = F.tanh(outputs)
 
-        warped_cloth = F.grid_sample(c, grid, padding_mode='border')
-        warped_grid = F.grid_sample(im_g, grid, padding_mode='zeros')
-
         visuals = [[c, warped_cloth, im_c], 
-                   [outputs, (warped_cloth+im)*0.5, im]]
+                   [im, warped_cloth, outputs]]
             
         save_images(outputs, im_names, try_on_dir) 
         if (step+1) % opt.display_count == 0:
@@ -172,10 +170,11 @@ def test_wuton(opt, test_loader, model_gmm, model_tom, board):
 
 
 
+
 def main():
     opt = get_opt()
     print(opt)
-    print("Start to test stage: %s, named: %s!" % (opt.stage, opt.name))
+    print("Start to train stage: %s, named: %s!" % (opt.stage, opt.name))
    
     # create dataset 
     train_dataset = CPDataset(opt)
@@ -188,27 +187,33 @@ def main():
         os.makedirs(opt.tensorboard_dir)
     board = SummaryWriter(logdir = os.path.join(opt.tensorboard_dir, opt.name))
    
-    # create model & train
+    # create model & train & save the final checkpoint
     if opt.stage == 'GMM':
         model = GMM(opt)
-        load_checkpoint(model, opt.checkpoint)
-        with torch.no_grad():
-            test_gmm(opt, train_loader, model, board)
+        if not opt.checkpoint =='' and os.path.exists(opt.checkpoint):
+            load_checkpoint(model, opt.checkpoint)
+        train_gmm(opt, train_loader, model, board)
+        save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'gmm_final.pth'))
     elif opt.stage == 'TOM':
         model = UnetGenerator(25, 4, 6, ngf=64, norm_layer=nn.InstanceNorm2d)
-        load_checkpoint(model, opt.checkpoint)
-        with torch.no_grad():
-            test_tom(opt, train_loader, model, board)
+        if not opt.checkpoint =='' and os.path.exists(opt.checkpoint):
+            load_checkpoint(model, opt.checkpoint)
+        train_tom(opt, train_loader, model, board)
+        save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'tom_final.pth'))
     else:
+        model_wuton = WUTON(opt, 3, 3, 5, ngf=16, norm_layer=nn.InstanceNorm2d)
+        # netD = define_D(3, 64, 'n_layers', 5, norm='batch', init_type='normal', gpu_ids=[0])
+        load_checkpoint(model_wuton, opt.checkpoint)
+        # load_checkpoint(netD, opt.checkpoint.replace('wuton_final', 'netD_final'))
+        test_wuton(opt, train_loader, model_wuton, board)
+        # save_checkpoint(model_wuton, os.path.join(opt.checkpoint_dir, opt.name, 'wuton_final.pth'))
+        # save_checkpoint(netD, os.path.join(opt.checkpoint_dir, opt.name, 'netD_final.pth'))
+
         # raise NotImplementedError('Model [%s] is not implemented' % opt.stage)
-        model_gmm = GMM(opt)
-        model_tom = UnetGenerator(3, 3, 5, ngf=16, norm_layer=nn.InstanceNorm2d)
-        load_checkpoint(model_gmm, opt.checkpoint_gmm)
-        load_checkpoint(model_tom, opt.checkpoint_tom)
-        with torch.no_grad():
-            test_wuton(opt, train_loader, model_gmm, model_tom, board)
+        
   
-    print('Finished test %s, named: %s!' % (opt.stage, opt.name))
+    print('Finished training %s, nameed: %s!' % (opt.stage, opt.name))
 
 if __name__ == "__main__":
     main()
+
