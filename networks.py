@@ -348,7 +348,7 @@ class UnetSkipConnectionBlock(nn.Module):
             standard_upconv = [nn.Conv2d(inner_nc*3, inner_nc*3, kernel_size=3, stride=1, padding=1), nn.ReLU(True), norm_layer(inner_nc*3)]
             upconv = nn.ConvTranspose2d(inner_nc*3, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
             
-            down = standard_downconv + [downconv, downrelu, downnorm]
+            down = [nn.Conv2d(input_nc, input_nc, kernel_size=3, stride=1, padding=1) + downconv]
             up = [nn.Conv2d(inner_nc*3, inner_nc*3, kernel_size=3, stride=1, padding=1), upconv]
 
             # model = down + [submodule] + up
@@ -359,7 +359,7 @@ class UnetSkipConnectionBlock(nn.Module):
             standard_upconv = [nn.Conv2d(inner_nc*2, inner_nc*2, kernel_size=3, stride=1, padding=1), nn.ReLU(True), norm_layer(inner_nc*3)]
             upconv = nn.ConvTranspose2d(inner_nc*2, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
             
-            down = standard_downconv + [downconv, downrelu, downnorm]
+            down = [nn.Conv2d(input_nc, input_nc, kernel_size=3, stride=1, padding=1), nn.ReLU(True)]+ [downconv, downrelu]
             up = standard_upconv + [upconv, uprelu, upnorm]
 
            #model = down + up
