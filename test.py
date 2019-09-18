@@ -7,7 +7,7 @@ import argparse
 import os
 import time
 from cp_dataset import CPDataset, CPDataLoader
-from networks import GMM, UnetGenerator, load_checkpoint
+from networks import GMM, UnetGenerator, VGGLoss, load_checkpoint, save_checkpoint, WUTON
 
 from tensorboardX import SummaryWriter
 from visualization import board_add_image, board_add_images, save_images
@@ -30,8 +30,7 @@ def get_opt():
     parser.add_argument("--grid_size", type=int, default = 5)
     parser.add_argument('--tensorboard_dir', type=str, default='tensorboard', help='save tensorboard infos')
     parser.add_argument('--result_dir', type=str, default='result', help='save result infos')
-    parser.add_argument('--checkpoint_gmm', type=str, default='', help='model gmm checkpoint for test')
-    parser.add_argument('--checkpoint_tom', type=str, default='', help='model tom checkpoint for test')
+    parser.add_argument('--checkpoint', type=str, default='', help='model checkpoint for test')
     parser.add_argument("--display_count", type=int, default = 1)
     parser.add_argument("--shuffle", action='store_true', help='shuffle input data')
 
@@ -130,7 +129,7 @@ def test_tom(opt, test_loader, model, board):
 
 
 
-def test_wuton(opt, train_loader, model_wuton, board):
+def test_wuton(opt, test_loader, model_wuton, board):
     model_wuton.cuda()
     model_wuton.train()
     
@@ -144,8 +143,7 @@ def test_wuton(opt, train_loader, model_wuton, board):
     print('Dataset size: %05d!' % (len(test_loader.dataset)), flush=True)
     for step, inputs in enumerate(test_loader.data_loader):
         iter_start_time = time.time()
-        inputs = train_loader.next_batch()
-            
+        im_names = inputs['im_name']
         im = inputs['image'].cuda()
         # im_g = inputs['grid_image'].cuda()
         c = inputs['cloth'].cuda()
@@ -159,10 +157,14 @@ def test_wuton(opt, train_loader, model_wuton, board):
         # warped_grid = F.grid_sample(im_g, grid, padding_mode='zeros')
         outputs = F.tanh(outputs)
 
-        visuals = [[c, warped_cloth, im_c], 
-                   [im, warped_cloth, outputs]]
+        visuals = [[c, warped_cloth, im, outputs]]
             
         save_images(outputs, im_names, try_on_dir) 
+
+        im_names_combine = ['combine_'+ im_name for im_name in im_names]
+        combine_images = torch.cat((c, warped_cloth, im, outputs),3)
+        save_images(combine_images, im_names_combine, try_on_dir) 
+
         if (step+1) % opt.display_count == 0:
             board_add_images(board, 'combine', visuals, step+1)
             t = time.time() - iter_start_time
@@ -205,7 +207,8 @@ def main():
         # netD = define_D(3, 64, 'n_layers', 5, norm='batch', init_type='normal', gpu_ids=[0])
         load_checkpoint(model_wuton, opt.checkpoint)
         # load_checkpoint(netD, opt.checkpoint.replace('wuton_final', 'netD_final'))
-        test_wuton(opt, train_loader, model_wuton, board)
+        with torch.no_grad():
+            test_wuton(opt, train_loader, model_wuton, board)
         # save_checkpoint(model_wuton, os.path.join(opt.checkpoint_dir, opt.name, 'wuton_final.pth'))
         # save_checkpoint(netD, os.path.join(opt.checkpoint_dir, opt.name, 'netD_final.pth'))
 
@@ -216,4 +219,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
