@@ -18,6 +18,10 @@ train_cloth_ids = np.load('train_cloth_ids.npy').tolist()
 test_cloth_ids = np.load('test_cloth_ids.npy').tolist()
 
 
+train_person_ids = np.load('train_person_ids.npy').tolist()
+test_person_ids = np.load('test_person_ids.npy').tolist()
+
+
 def cloth_region_position(new_image):
     if len(new_image.shape) == 3:
         fill_pix_bool = np.all(new_image == (1,1,1), axis=-1)
@@ -94,6 +98,17 @@ class CPDataset(data.Dataset):
             lenth = len(train_cloth_ids)
             unpair_c_name = list(train_cloth_ids)[randrange(lenth)]
 
+
+        if self.datamode == 'test':
+            test_person_ids.remove(im_name)
+            lenth = len(test_person_ids)
+            random_person_name = list(test_person_ids)[randrange(lenth)]
+        else:
+            train_person_ids.remove(im_name)
+            lenth = len(train_person_ids)
+            random_person_name = list(train_person_ids)[randrange(lenth)]
+
+
         # cloth image & cloth mask
         # if self.stage == 'GMM':
         #     c = Image.open(osp.join(self.data_path, 'cloth', c_name))
@@ -106,6 +121,9 @@ class CPDataset(data.Dataset):
 
         c_unpair = Image.open(osp.join(self.data_path, 'cloth', unpair_c_name))
         c_unpair = self.transform(c_unpair)  # [-1,1]
+
+        random_person = Image.open(osp.join(self.data_path, 'images', random_person_name))
+        random_person = self.transform(random_person)  # [-1,1]
 
         # cm_array = np.array(cm)
         # cm_array = (cm_array >= 128).astype(np.float32)
@@ -207,6 +225,7 @@ class CPDataset(data.Dataset):
             # 'agnostic_cloth': agnostic_cloth,
             'dilated_upper_wuton': im_dilated,
             'c_unpaired': c_unpair,
+            'random_person': random_person,
             }
 
         return result

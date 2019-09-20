@@ -105,6 +105,7 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
         inputs = train_loader.next_batch()
             
         im = inputs['image'].cuda()
+        im_random = inputs['random_person'].cuda()
         im_g = inputs['grid_image'].cuda()
         c = inputs['cloth'].cuda()
         c_unpaired = inputs['c_unpaired'].cuda()
@@ -133,10 +134,10 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
 
         # Discriminator loss
         optimizer_D.zero_grad()
-        y_pred = netD(im)
+        y_pred = netD(im_random)
         y_pred_fake_D = netD(outputs_unpaired.detach()) # discriminator        
 
-        gradient_penalty = compute_gradient_penalty(netD, im.data.to(device), outputs_unpaired.data.to(device))
+        gradient_penalty = compute_gradient_penalty(netD, im_random.data.to(device), outputs_unpaired.data.to(device))
         relativistic_loss_d = BCE_stable(y_pred - y_pred_fake_D, y)
         loss_d = relativistic_loss_d + lambda_gp * gradient_penalty
         loss_d.backward()
@@ -184,7 +185,7 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
             outputs_unpaired_g, grid_unpaired, theta_unpaired = model_wuton(c_unpaired, dilated_upper_wuton)
             warped_cloth_unpaired = F.grid_sample(c_unpaired, grid_unpaired, padding_mode='border')
             outputs_unpaired_g = F.tanh(outputs_unpaired_g)
-            y_pred_G = netD(im)
+            y_pred_G = netD(im_random)
             y_pred_fake_G = netD(outputs_unpaired_g) # generator
             relativistic_loss_g = BCE_stable(y_pred_fake_G - y_pred_G, y)
             loss_g = relativistic_loss_g + loss_warp_l1 + loss_l1 + loss_vgg
