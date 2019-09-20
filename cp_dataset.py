@@ -99,13 +99,15 @@ class CPDataset(data.Dataset):
             unpair_c_name = list(train_cloth_ids)[randrange(lenth)]
 
 
+        import copy
+        my_im_name = copy.copy(self.im_names)
         if self.datamode == 'test':
-            test_person_ids.remove(im_name)
-            lenth = len(test_person_ids)
+            my_im_name.remove(im_name)
+            lenth = len(my_im_name)
             random_person_name = list(test_person_ids)[randrange(lenth)]
         else:
-            train_person_ids.remove(im_name)
-            lenth = len(train_person_ids)
+            my_im_name.remove(im_name)
+            lenth = len(my_im_name)
             random_person_name = list(train_person_ids)[randrange(lenth)]
 
 
@@ -122,7 +124,7 @@ class CPDataset(data.Dataset):
         c_unpair = Image.open(osp.join(self.data_path, 'cloth', unpair_c_name))
         c_unpair = self.transform(c_unpair)  # [-1,1]
 
-        random_person = Image.open(osp.join(self.data_path, 'images', random_person_name))
+        random_person = Image.open(osp.join(self.data_path, 'image', random_person_name))
         random_person = self.transform(random_person)  # [-1,1]
 
         # cm_array = np.array(cm)
