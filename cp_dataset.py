@@ -104,11 +104,11 @@ class CPDataset(data.Dataset):
         if self.datamode == 'test':
             my_im_name.remove(im_name)
             lenth = len(my_im_name)
-            random_person_name = list(test_person_ids)[randrange(lenth)]
+            random_person_name = list(my_im_name)[randrange(lenth)]
         else:
             my_im_name.remove(im_name)
             lenth = len(my_im_name)
-            random_person_name = list(train_person_ids)[randrange(lenth)]
+            random_person_name = list(my_im_name)[randrange(lenth)]
 
 
         # cloth image & cloth mask
