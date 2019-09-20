@@ -192,7 +192,7 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
 
             visuals = [[c, warped_cloth, im_c], 
                        [dilated_upper_wuton, outputs, im],
-                       [c_unpaired, warped_cloth_unpaired, outputs_unpaired_g]]
+                       [im_random, warped_cloth_unpaired, outputs_unpaired_g]]
 
 
 
