@@ -134,7 +134,7 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
 
         # Discriminator loss
         optimizer_D.zero_grad()
-        true = torch.cat((c, im_g),1)
+        true = torch.cat((c, im),1)
         fake = torch.cat((c_unpaired, outputs_unpaired),1)
         y_pred = netD(true)
         y_pred_fake_D = netD(fake.detach()) # discriminator        
@@ -187,7 +187,7 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
             outputs_unpaired_g, grid_unpaired, theta_unpaired = model_wuton(c_unpaired, dilated_upper_wuton)
             warped_cloth_unpaired = F.grid_sample(c_unpaired, grid_unpaired, padding_mode='border')
             outputs_unpaired_g = F.tanh(outputs_unpaired_g)
-            true = torch.cat((c, im_g),1)
+            true = torch.cat((c, im),1)
             fake = torch.cat((c_unpaired, outputs_unpaired),1)
 
             y_pred_G = netD(true)
