@@ -134,8 +134,8 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
 
         # Discriminator loss
         optimizer_D.zero_grad()
-        y_pred = netD(im_random)
-        y_pred_fake_D = netD(outputs_unpaired.detach()) # discriminator        
+        y_pred = netD(torch.cat((c, im_g),1))
+        y_pred_fake_D = netD(torch.cat((c_unpaired, outputs_unpaired),1).detach()) # discriminator        
 
         gradient_penalty = compute_gradient_penalty(netD, im_random.data.to(device), outputs_unpaired.data.to(device))
         relativistic_loss_d = BCE_stable(y_pred - y_pred_fake_D, y)
@@ -185,8 +185,8 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
             outputs_unpaired_g, grid_unpaired, theta_unpaired = model_wuton(c_unpaired, dilated_upper_wuton)
             warped_cloth_unpaired = F.grid_sample(c_unpaired, grid_unpaired, padding_mode='border')
             outputs_unpaired_g = F.tanh(outputs_unpaired_g)
-            y_pred_G = netD(im_random)
-            y_pred_fake_G = netD(outputs_unpaired_g) # generator
+            y_pred_G = netD(torch.cat((c, im_g),1))
+            y_pred_fake_G = netD(torch.cat((c_unpaired, outputs_unpaired),1)) # generator
             relativistic_loss_g = BCE_stable(y_pred_fake_G - y_pred_G, y)
             loss_g = relativistic_loss_g + loss_warp_l1 + loss_l1 + loss_vgg
 
@@ -247,7 +247,7 @@ def main():
         save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'tom_final.pth'))
     else:
         model_wuton = WUTON(opt, 3, 3, 5, ngf=16, norm_layer=nn.InstanceNorm2d)
-        netD = define_D(3, 64, 'n_layers', 5, norm='batch', init_type='normal', gpu_ids=[0])
+        netD = define_D(6, 64, 'n_layers', 5, norm='batch', init_type='normal', gpu_ids=[0])
         if not opt.checkpoint =='' and os.path.exists(opt.checkpoint):
             print('using loaded model')
             load_checkpoint(model_wuton, opt.checkpoint)
