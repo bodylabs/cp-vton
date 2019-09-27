@@ -115,8 +115,8 @@ class CPDataset(data.Dataset):
 
 
         if self.datamode == 'test':
-            c_unpair = self.transform(torch.zeros_like(c)) 
-            random_person = self.transform(torch.zeros_like(c))
+            c_unpair = torch.zeros_like(c)
+            random_person = torch.zeros_like(c)
         else: 
             c_unpair = Image.open(osp.join(self.data_path, 'cloth', unpair_c_name))
             c_unpair = self.transform(c_unpair)  # [-1,1]
