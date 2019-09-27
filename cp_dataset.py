@@ -89,11 +89,7 @@ class CPDataset(data.Dataset):
         c_name = self.c_names[index]
         im_name = self.im_names[index]
 
-        if self.datamode == 'test':
-            test_cloth_ids.remove(c_name)
-            lenth = len(test_cloth_ids)
-            unpair_c_name = list(test_cloth_ids)[randrange(lenth)]
-        else:
+        if self.datamode == 'train':
             train_cloth_ids.remove(c_name)
             lenth = len(train_cloth_ids)
             unpair_c_name = list(train_cloth_ids)[randrange(lenth)]
@@ -101,11 +97,7 @@ class CPDataset(data.Dataset):
 
         import copy
         my_im_name = copy.copy(self.im_names)
-        if self.datamode == 'test':
-            my_im_name.remove(im_name)
-            lenth = len(my_im_name)
-            random_person_name = list(my_im_name)[randrange(lenth)]
-        else:
+        if self.datamode == 'train':
             my_im_name.remove(im_name)
             lenth = len(my_im_name)
             random_person_name = list(my_im_name)[randrange(lenth)]
@@ -121,11 +113,16 @@ class CPDataset(data.Dataset):
         c = Image.open(osp.join(self.data_path, 'cloth', c_name))
         c = self.transform(c)  # [-1,1]
 
-        c_unpair = Image.open(osp.join(self.data_path, 'cloth', unpair_c_name))
-        c_unpair = self.transform(c_unpair)  # [-1,1]
 
-        random_person = Image.open(osp.join(self.data_path, 'image', random_person_name))
-        random_person = self.transform(random_person)  # [-1,1]
+        if self.datamode == 'test':
+            c_unpair = self.transform(torch.zeros_like(c)) 
+            random_person = self.transform(torch.zeros_like(c))
+        else: 
+            c_unpair = Image.open(osp.join(self.data_path, 'cloth', unpair_c_name))
+            c_unpair = self.transform(c_unpair)  # [-1,1]
+
+            random_person = Image.open(osp.join(self.data_path, 'image', random_person_name))
+            random_person = self.transform(random_person)  # [-1,1]
 
         # cm_array = np.array(cm)
         # cm_array = (cm_array >= 128).astype(np.float32)

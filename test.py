@@ -37,95 +37,6 @@ def get_opt():
     opt = parser.parse_args()
     return opt
 
-def test_gmm(opt, test_loader, model, board):
-    model.cuda()
-    model.eval()
-
-    base_name = os.path.basename(opt.checkpoint)
-    save_dir = os.path.join(opt.result_dir, base_name, opt.datamode)
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-    warp_cloth_dir = os.path.join(save_dir, 'warp-cloth')
-    if not os.path.exists(warp_cloth_dir):
-        os.makedirs(warp_cloth_dir)
-    warp_mask_dir = os.path.join(save_dir, 'warp-mask')
-    if not os.path.exists(warp_mask_dir):
-        os.makedirs(warp_mask_dir)
-
-    for step, inputs in enumerate(test_loader.data_loader):
-        iter_start_time = time.time()
-        
-        c_names = inputs['c_name']
-        im = inputs['image'].cuda()
-        im_pose = inputs['pose_image'].cuda()
-        im_h = inputs['head'].cuda()
-        shape = inputs['shape'].cuda()
-        agnostic = inputs['agnostic'].cuda()
-        c = inputs['cloth'].cuda()
-        cm = inputs['cloth_mask'].cuda()
-        im_c =  inputs['parse_cloth'].cuda()
-        im_g = inputs['grid_image'].cuda()
-            
-        grid, theta = model(agnostic, c)
-        warped_cloth = F.grid_sample(c, grid, padding_mode='border')
-        warped_mask = F.grid_sample(cm, grid, padding_mode='zeros')
-        warped_grid = F.grid_sample(im_g, grid, padding_mode='zeros')
-
-        visuals = [ [im_h, shape, im_pose], 
-                   [c, warped_cloth, im_c], 
-                   [warped_grid, (warped_cloth+im)*0.5, im]]
-        
-        save_images(warped_cloth, c_names, warp_cloth_dir) 
-        save_images(warped_mask*2-1, c_names, warp_mask_dir) 
-
-        if (step+1) % opt.display_count == 0:
-            board_add_images(board, 'combine', visuals, step+1)
-            t = time.time() - iter_start_time
-            print('step: %8d, time: %.3f' % (step+1, t), flush=True)
-        
-
-
-def test_tom(opt, test_loader, model, board):
-    model.cuda()
-    model.eval()
-    
-    base_name = os.path.basename(opt.checkpoint)
-    save_dir = os.path.join(opt.result_dir, base_name, opt.datamode)
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-    try_on_dir = os.path.join(save_dir, 'try-on')
-    if not os.path.exists(try_on_dir):
-        os.makedirs(try_on_dir)
-    print('Dataset size: %05d!' % (len(test_loader.dataset)), flush=True)
-    for step, inputs in enumerate(test_loader.data_loader):
-        iter_start_time = time.time()
-        
-        im_names = inputs['im_name']
-        im = inputs['image'].cuda()
-        im_pose = inputs['pose_image']
-        im_h = inputs['head']
-        shape = inputs['shape']
-
-        agnostic = inputs['agnostic'].cuda()
-        c = inputs['cloth'].cuda()
-        cm = inputs['cloth_mask'].cuda()
-        
-        outputs = model(torch.cat([agnostic, c],1))
-        p_rendered, m_composite = torch.split(outputs, 3,1)
-        p_rendered = F.tanh(p_rendered)
-        m_composite = F.sigmoid(m_composite)
-        p_tryon = c * m_composite + p_rendered * (1 - m_composite)
-
-        visuals = [ [im_h, shape, im_pose], 
-                   [c, 2*cm-1, m_composite], 
-                   [p_rendered, p_tryon, im]]
-            
-        save_images(p_tryon, im_names, try_on_dir) 
-        if (step+1) % opt.display_count == 0:
-            board_add_images(board, 'combine', visuals, step+1)
-            t = time.time() - iter_start_time
-            print('step: %8d, time: %.3f' % (step+1, t), flush=True)
-
 
 
 
@@ -143,6 +54,7 @@ def test_wuton(opt, test_loader, model_wuton, board):
     print('Dataset size: %05d!' % (len(test_loader.dataset)), flush=True)
     for step, inputs in enumerate(test_loader.data_loader):
         iter_start_time = time.time()
+        c_names = inputs['c_name']
         im_names = inputs['im_name']
         im = inputs['image'].cuda()
         # im_g = inputs['grid_image'].cuda()
@@ -156,19 +68,18 @@ def test_wuton(opt, test_loader, model_wuton, board):
         warped_cloth = F.grid_sample(c, grid, padding_mode='border')
         # warped_grid = F.grid_sample(im_g, grid, padding_mode='zeros')
         outputs = F.tanh(outputs)
-
-        visuals = [[c, warped_cloth, im, outputs]]
             
-        save_images(outputs, im_names, try_on_dir) 
+        im_c_names = [im_name + c_name for im_name in im_names for c_name in c_names]
+        save_images(outputs, im_c_names, try_on_dir) 
 
         im_names_combine = ['combine_'+ im_name for im_name in im_names]
         combine_images = torch.cat((c, warped_cloth, im, outputs),3)
         save_images(combine_images, im_names_combine, try_on_dir) 
 
-        if (step+1) % opt.display_count == 0:
-            board_add_images(board, 'combine', visuals, step+1)
-            t = time.time() - iter_start_time
-            print('step: %8d, time: %.3f' % (step+1, t), flush=True)
+        # if (step+1) % opt.display_count == 0:
+        #     board_add_images(board, 'combine', visuals, step+1)
+        #     t = time.time() - iter_start_time
+        #     print('step: %8d, time: %.3f' % (step+1, t), flush=True)
 
 
 
