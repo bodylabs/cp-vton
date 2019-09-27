@@ -69,10 +69,10 @@ def test_wuton(opt, test_loader, model_wuton, board):
         # warped_grid = F.grid_sample(im_g, grid, padding_mode='zeros')
         outputs = F.tanh(outputs)
             
-        im_c_names = [im_name + c_name for im_name in im_names for c_name in c_names]
+        im_c_names = [im_name +'_' +c_name for im_name in im_names for c_name in c_names]
         save_images(outputs, im_c_names, try_on_dir) 
 
-        im_names_combine = ['combine_'+ im_name for im_name in im_names]
+        im_names_combine = ['combine_'+ im_c_name for im_c_name in im_c_names]
         combine_images = torch.cat((c, warped_cloth, im, outputs),3)
         save_images(combine_images, im_names_combine, try_on_dir) 
 
