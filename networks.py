@@ -76,14 +76,14 @@ def init_weights(net, init_type='normal'):
 class FeatureExtraction_wuton(nn.Module):
     def __init__(self, input_nc, ngf=16, n_layers=4, norm_layer=nn.BatchNorm2d, use_dropout=False):
         super(FeatureExtraction_wuton, self).__init__()
-        standardconv = [nn.Conv2d(input_nc, input_nc, kernel_size=3, stride=1, padding=1), nn.ReLU(True), norm_layer(input_nc)]
-        downconv = [nn.Conv2d(input_nc, ngf, kernel_size=4, stride=2, padding=1), nn.ReLU(True), norm_layer(ngf)]
+        standardconv = [nn.Conv2d(input_nc, input_nc, kernel_size=3, stride=1, padding=1, bias=True), nn.ReLU(True), norm_layer(input_nc)]
+        downconv = [nn.Conv2d(input_nc, ngf, kernel_size=4, stride=2, padding=1, bias=True), nn.ReLU(True), norm_layer(ngf)]
         model = standardconv + downconv
         for i in range(n_layers):
             in_ngf = 2**i * ngf if 2**i * ngf < 512 else 512
             out_ngf = 2**(i+1) * ngf if 2**i * ngf < 512 else 512
-            standardconv = [nn.Conv2d(in_ngf, in_ngf, kernel_size=3, stride=1, padding=1), nn.ReLU(True), norm_layer(in_ngf)]
-            downconv = [nn.Conv2d(in_ngf, out_ngf, kernel_size=4, stride=2, padding=1), nn.ReLU(True), norm_layer(out_ngf)]
+            standardconv = [nn.Conv2d(in_ngf, in_ngf, kernel_size=3, stride=1, padding=1, bias=True), nn.ReLU(True), norm_layer(in_ngf)]
+            downconv = [nn.Conv2d(in_ngf, out_ngf, kernel_size=4, stride=2, padding=1, bias=True), nn.ReLU(True), norm_layer(out_ngf)]
             model += (standardconv+downconv)
         
         self.model = nn.Sequential(*model)
@@ -336,24 +336,21 @@ class UnetSkipConnectionBlock(nn.Module):
             input_nc = outer_nc
 
         ################# cloth image encoder and decoder
-        standard_downconv = [nn.Conv2d(input_nc, input_nc, kernel_size=3, stride=1, padding=1), nn.ReLU(True), norm_layer(input_nc)]
-        downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
-        downrelu = nn.ReLU(True)
-        downnorm = norm_layer(inner_nc)
 
-        uprelu = nn.ReLU(True)
-        upnorm = norm_layer(outer_nc)
 
         if outermost:
             upsample = nn.Upsample(scale_factor=2, mode='bilinear')
             # standard_upconv = [nn.Conv2d(inner_nc*3, inner_nc*3, kernel_size=3, stride=1, padding=1), nn.ReLU(True), norm_layer(inner_nc*3)]
             # upconv = nn.ConvTranspose2d(inner_nc*3, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
             
-            down = [nn.Conv2d(input_nc, input_nc, kernel_size=3, stride=1, padding=1), downconv]
-            up = [upsample, nn.Conv2d(inner_nc*3, outer_nc, kernel_size=3, stride=1, padding=1)]
+            down = [nn.Conv2d(input_nc, inner_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)]
+            down_2 = [nn.Conv2d(input_nc, inner_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)]
+
+            up = [upsample, nn.Conv2d(inner_nc*3, outer_nc, kernel_size=3, stride=1, padding=1, bias=use_bias)]
 
             # model = down + [submodule] + up
             self.down = nn.Sequential(*down)
+            self.down_2 = nn.Sequential(*down_2)
             self.up = nn.Sequential(*up)
             self.submodule = submodule
         elif innermost:
@@ -361,19 +358,24 @@ class UnetSkipConnectionBlock(nn.Module):
             # standard_upconv = [nn.Conv2d(inner_nc*2, inner_nc*2, kernel_size=3, stride=1, padding=1), nn.ReLU(True), norm_layer(inner_nc*3)]
             # upconv = nn.ConvTranspose2d(inner_nc*2, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
             
-            down = [nn.Conv2d(input_nc, input_nc, kernel_size=3, stride=1, padding=1), nn.ReLU(True)]+ [downconv, downrelu]
-            up = [upsample, nn.Conv2d(inner_nc*2, outer_nc, kernel_size=3, stride=1, padding=1), nn.ReLU(True), upnorm]
+            down = [nn.Conv2d(input_nc, input_nc, kernel_size=3, stride=1, padding=1, bias=use_bias), nn.ReLU(True), nn.Conv2d(input_nc, inner_nc, kernel_size=4, stride=2, padding=1, bias=use_bias), nn.ReLU(True)]
+            down_2 = [nn.Conv2d(input_nc, input_nc, kernel_size=3, stride=1, padding=1, bias=use_bias), nn.ReLU(True), nn.Conv2d(input_nc, inner_nc, kernel_size=4, stride=2, padding=1, bias=use_bias), nn.ReLU(True)]
+
+            up = [upsample, nn.Conv2d(inner_nc*2, outer_nc, kernel_size=3, stride=1, padding=1, bias=use_bias), nn.ReLU(True), norm_layer(outer_nc)]
 
            #model = down + up
             self.down = nn.Sequential(*down)
+            self.down_2 = nn.Sequential(*down_2)
             self.up = nn.Sequential(*up)
         else:
             upsample = nn.Upsample(scale_factor=2, mode='bilinear')
             # standard_upconv = [nn.Conv2d(inner_nc*3, inner_nc*3, kernel_size=3, stride=1, padding=1), nn.ReLU(True), norm_layer(inner_nc*3)]
             # upconv = nn.ConvTranspose2d(inner_nc*3, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
             
-            down = standard_downconv + [downconv, downrelu, downnorm]
-            up = [upsample, nn.Conv2d(inner_nc*3, outer_nc, kernel_size=3, stride=1, padding=1), nn.ReLU(True), upnorm]
+            down = [nn.Conv2d(input_nc, input_nc, kernel_size=3, stride=1, padding=1, bias=use_bias), nn.ReLU(True), norm_layer(input_nc), nn.Conv2d(input_nc, inner_nc, kernel_size=4, stride=2, padding=1, bias=use_bias), nn.ReLU(True), norm_layer(inner_nc)]
+            down_2 = [nn.Conv2d(input_nc, input_nc, kernel_size=3, stride=1, padding=1, bias=use_bias), nn.ReLU(True), norm_layer(input_nc), nn.Conv2d(input_nc, inner_nc, kernel_size=4, stride=2, padding=1, bias=use_bias), nn.ReLU(True), norm_layer(inner_nc)]
+
+            up = [upsample, nn.Conv2d(inner_nc*3, outer_nc, kernel_size=3, stride=1, padding=1, bias=use_bias), nn.ReLU(True), norm_layer(outer_nc)]
 
 
             if use_dropout:
@@ -381,21 +383,12 @@ class UnetSkipConnectionBlock(nn.Module):
             else:
                 up = up
             self.down = nn.Sequential(*down)
+            self.down_2 = nn.Sequential(*down_2)
             self.up = nn.Sequential(*up)
             self.submodule = submodule
 
 
-        ################# ap image encoder 
-        standard_downconv_2 = [nn.Conv2d(input_nc, input_nc, kernel_size=3, stride=1, padding=1), nn.ReLU(True), norm_layer(input_nc)]
-        downconv_2 = nn.Conv2d(input_nc, inner_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
-        downrelu_2 = nn.ReLU(True)
-        downnorm_2 = norm_layer(inner_nc)
 
-        # uprelu_2 = nn.ReLU(True)
-        # upnorm_2 = norm_layer(outer_nc)
-
-        down_2 = standard_downconv_2 + [downconv_2, downrelu_2, downnorm_2]
-        self.down_2 = nn.Sequential(*down_2)
 
 
     def forward(self, input_c, input_ap, theta):
