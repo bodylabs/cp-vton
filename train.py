@@ -134,12 +134,12 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
 
         # Discriminator loss
         optimizer_D.zero_grad()
-        true = torch.cat((c, im),1)
-        fake = torch.cat((c_unpaired, outputs_unpaired),1)
-        y_pred = netD(true)
-        y_pred_fake_D = netD(fake.detach()) # discriminator        
+        # true = torch.cat((c, im),1)
+        # fake = torch.cat((c_unpaired, outputs_unpaired),1)
+        y_pred = netD(im)
+        y_pred_fake_D = netD(outputs_unpaired.detach()) # discriminator        
 
-        gradient_penalty = compute_gradient_penalty(netD, true.data.to(device), fake.data.to(device))
+        gradient_penalty = compute_gradient_penalty(netD, im.data.to(device), outputs_unpaired.data.to(device))
         relativistic_loss_d = BCE_stable(y_pred - y_pred_fake_D, y)
         loss_d = relativistic_loss_d + lambda_gp * gradient_penalty
         loss_d.backward()
@@ -187,11 +187,11 @@ def train_wuton(opt, train_loader, model_wuton, netD, board):
             outputs_unpaired_g, grid_unpaired, theta_unpaired = model_wuton(c_unpaired, dilated_upper_wuton)
             warped_cloth_unpaired = F.grid_sample(c_unpaired, grid_unpaired, padding_mode='border')
             outputs_unpaired_g = F.tanh(outputs_unpaired_g)
-            true = torch.cat((c, im),1)
-            fake = torch.cat((c_unpaired, outputs_unpaired),1)
+            # true = torch.cat((c, im),1)
+            # fake = torch.cat((c_unpaired, outputs_unpaired),1)
 
-            y_pred_G = netD(true)
-            y_pred_fake_G = netD(fake) # generator
+            y_pred_G = netD(im)
+            y_pred_fake_G = netD(outputs_unpaired) # generator
             relativistic_loss_g = BCE_stable(y_pred_fake_G - y_pred_G, y)
             loss_g = relativistic_loss_g + loss_warp_l1 + loss_l1 + loss_vgg
 
