@@ -252,7 +252,7 @@ def main():
         save_checkpoint(model, os.path.join(opt.checkpoint_dir, opt.name, 'tom_final.pth'))
     else:
         model_wuton = WUTON(opt, 3, 3, 5, ngf=16, norm_layer=nn.InstanceNorm2d)
-        netD = define_D(6, 64, 'n_layers', 5, norm='batch', init_type='normal', gpu_ids=[0])
+        netD = define_D(3, 64, 'n_layers', 5, norm='batch', init_type='normal', gpu_ids=[0])
         if not opt.checkpoint =='' and os.path.exists(opt.checkpoint):
             print('using loaded model')
             load_checkpoint(model_wuton, opt.checkpoint)
