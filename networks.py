@@ -357,13 +357,13 @@ class UnetSkipConnectionBlock(nn.Module):
         elif innermost:
             upsample = nn.Upsample(scale_factor=2, mode='bilinear')
             standard_upconv = [nn.Conv2d(inner_nc*2, inner_nc*2, kernel_size=3, stride=1, padding=1, bias=use_bias), nn.ReLU(True), norm_layer(inner_nc*2)]
-            upconv = [nn.ConvTranspose2d(inner_nc*2, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias), nn.ReLU(True), norm_layer(outer_nc)]
+            # upconv = [nn.ConvTranspose2d(inner_nc*2, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias), nn.ReLU(True), norm_layer(outer_nc)]
             
             down = [nn.Conv2d(input_nc, input_nc, kernel_size=3, stride=1, padding=1, bias=use_bias), nn.ReLU(True), nn.Conv2d(input_nc, inner_nc, kernel_size=4, stride=2, padding=1, bias=use_bias), nn.ReLU(True)]
             down_2 = [nn.Conv2d(input_nc, input_nc, kernel_size=3, stride=1, padding=1, bias=use_bias), nn.ReLU(True), nn.Conv2d(input_nc, inner_nc, kernel_size=4, stride=2, padding=1, bias=use_bias), nn.ReLU(True)]
 
             # up = [upsample, nn.Conv2d(inner_nc*2, outer_nc, kernel_size=3, stride=1, padding=1, bias=use_bias), nn.ReLU(True), norm_layer(outer_nc)]
-            up = standard_upconv + upconv
+            up = [upsample] + standard_upconv + [nn.Conv2d(inner_nc*2, outer_nc, kernel_size=3, stride=1, padding=1, bias=use_bias), nn.ReLU(True), norm_layer(outer_nc)]
 
            #model = down + up
             self.down = nn.Sequential(*down)
@@ -372,13 +372,13 @@ class UnetSkipConnectionBlock(nn.Module):
         else:
             upsample = nn.Upsample(scale_factor=2, mode='bilinear')
             standard_upconv = [nn.Conv2d(inner_nc*3, inner_nc*3, kernel_size=3, stride=1, padding=1, bias=use_bias), nn.ReLU(True), norm_layer(inner_nc*3)]
-            upconv = [nn.ConvTranspose2d(inner_nc*3, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias), nn.ReLU(True), norm_layer(outer_nc)]
+            # upconv = [nn.ConvTranspose2d(inner_nc*3, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias), nn.ReLU(True), norm_layer(outer_nc)]
             
             down = [nn.Conv2d(input_nc, input_nc, kernel_size=3, stride=1, padding=1, bias=use_bias), nn.ReLU(True), norm_layer(input_nc), nn.Conv2d(input_nc, inner_nc, kernel_size=4, stride=2, padding=1, bias=use_bias), nn.ReLU(True), norm_layer(inner_nc)]
             down_2 = [nn.Conv2d(input_nc, input_nc, kernel_size=3, stride=1, padding=1, bias=use_bias), nn.ReLU(True), norm_layer(input_nc), nn.Conv2d(input_nc, inner_nc, kernel_size=4, stride=2, padding=1, bias=use_bias), nn.ReLU(True), norm_layer(inner_nc)]
 
             # up = [upsample, nn.Conv2d(inner_nc*3, outer_nc, kernel_size=3, stride=1, padding=1, bias=use_bias), nn.ReLU(True), norm_layer(outer_nc)]
-            up = standard_upconv + upconv
+            up = [upsample] + standard_upconv + [nn.Conv2d(inner_nc*3, outer_nc, kernel_size=3, stride=1, padding=1, bias=use_bias), nn.ReLU(True), norm_layer(outer_nc)]
 
 
             if use_dropout:
