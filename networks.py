@@ -408,13 +408,7 @@ class UnetSkipConnectionBlock(nn.Module):
 
                 down_result_c = self.down(input_c)
                 down_result_ap = self.down_2(input_ap)
-
-                xb_c,xc_c,xh_c,xw_c = down_result_c.size()
-                grid_function_c = TpsGridGen(xh_c, xw_c, use_cuda=True, grid_size=5)
-                grid_c = grid_function_c(theta)
-                warped_c_inner = F.grid_sample(down_result_c, grid_c, padding_mode='border')
-
-                concatenate_result = torch.cat((warped_c_inner, down_result_ap),1)
+                concatenate_result = torch.cat((down_result_c, down_result_ap),1)
                 up_result = self.up(concatenate_result)
                 return torch.cat([warped_c, input_ap, up_result], 1)
             else:
